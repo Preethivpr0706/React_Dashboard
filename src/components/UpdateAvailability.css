@@ -1,0 +1,134 @@
+.admin-page {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-page .heading {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.admin-page .horizontal-line {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.admin-page .form {
+    margin-top: 20px;
+}
+
+.admin-page .form-group {
+    margin-bottom: 20px;
+}
+
+.admin-page .label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.admin-page .select {
+    width: 100%;
+    height: 60px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.admin-page .disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.admin-page .availability {
+    display: flex;
+    align-items: center;
+}
+
+.admin-page .radio {
+    margin-right: 10px;
+}
+
+.admin-page .timings {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.admin-page .timing {
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.admin-page .timing.selected {
+    background-color: #4bbff5;
+}
+
+.admin-page .timing.blocked {
+    background-color: #f07a7a;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.admin-page .timing:hover {
+    border-color: #888;
+    cursor: pointer;
+}
+
+.admin-page .update-button {
+    width: 100%;
+    height: 40px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: #fff;
+    cursor: pointer;
+}
+
+.admin-page .message {
+    margin-top: 20px;
+    color: #4CAF50;
+}
+
+.admin-page .available-dates {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.admin-page .date-tile {
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.admin-page .date-tile.selected {
+    background-color: #72bfe3 !important;
+}
+
+.admin-page .date-tile.blocked {
+    background-color: #f07a7a;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.admin-page .date-tile:hover {
+    border-color: #888;
+    cursor: pointer;
+}
+
+.admin-page .date-tile.partial {
+    background-color: #ffd700;
+}

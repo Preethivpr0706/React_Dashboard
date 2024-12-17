@@ -1,0 +1,372 @@
+/* Sidebar Styles */
+
+.sidebar {
+    min-width: 250px;
+    transition: all 0.3s ease-in-out;
+}
+
+.sidebar.collapsed {
+    min-width: 80px;
+    /* Reduced width when collapsed */
+    overflow: hidden;
+}
+
+.sidebar .sidebar-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 20px;
+}
+
+
+/* Adjust the content when the sidebar is collapsed */
+
+.main-content.full-width {
+    margin-left: 0;
+    /* Adjust layout when sidebar is collapsed */
+}
+
+.main-content {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.widget {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.widget h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.widget p {
+    font-size: 2rem;
+}
+
+.contact-support h4 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.contact-support button {
+    font-size: 1rem;
+}
+
+
+/* Header Styles */
+
+header {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header .dropdown-menu {
+    right: 0;
+}
+
+header .btn-primary {
+    font-size: 1.5rem;
+}
+
+
+/* Responsive Styles */
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 0;
+    }
+    .sidebar {
+        min-width: 60px;
+    }
+    .sidebar.open {
+        min-width: 250px;
+    }
+}
+
+
+/* Sidebar Styles */
+
+.sidebar {
+    min-width: 250px;
+    background-color: #007bff;
+    /* Add your desired color */
+    color: white;
+    /* Ensure text is visible on the colored background */
+    height: 100vh;
+    /* Full screen height */
+    padding-top: 20px;
+    /* Space for header items */
+}
+
+.sidebar .sidebar-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    /* White color for the header text */
+    padding-left: 20px;
+}
+
+.sidebar ul {
+    padding-left: 20px;
+}
+
+.sidebar li {
+    list-style: none;
+}
+
+.sidebar li a {
+    display: block;
+    padding: 10px 0;
+    font-size: 1.1rem;
+    color: white;
+    text-decoration: none;
+}
+
+.sidebar li a:hover {
+    background-color: #0056b3;
+    /* Darker shade on hover */
+    border-radius: 5px;
+}
+
+
+/* Adjust the content when the sidebar is open */
+
+.main-content {
+    margin-left: 250px;
+    /* Adjusted to match the width of the sidebar */
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.widget {
+    border-radius: 8px;
+}
+
+.widget p.h2 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.widget.bg-primary {
+    background-color: #007bff;
+}
+
+.widget.bg-success {
+    background-color: #28a745;
+}
+
+.widget.bg-danger {
+    background-color: #dc3545;
+}
+
+.contact-support {
+    margin-top: 20px;
+}
+
+button {
+    margin-top: 10px;
+}
+
+
+/* Adjust layout when sidebar is collapsed or not visible (optional) */
+
+.main-content.full-width {
+    margin-left: 0;
+}
+
+
+/* Sidebar Styles */
+
+.sidebar {
+    min-width: 250px;
+    background-color: #007bff;
+    /* Sidebar color */
+    color: white;
+    /* Text color */
+    height: 100vh;
+    /* Full screen height */
+    padding-top: 20px;
+    /* Space for header items */
+}
+
+
+/* Ensure main content fills the remaining space */
+
+.main-content {
+    flex-grow: 1;
+    /* This will make the main content take up the remaining space */
+    margin-left: 0;
+    /* Remove the gap between sidebar and content */
+    padding: 20px;
+}
+
+
+/* Header styles */
+
+.sidebar .sidebar-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    padding-left: 20px;
+}
+
+.sidebar ul {
+    padding-left: 20px;
+}
+
+.sidebar li {
+    list-style: none;
+}
+
+.sidebar li a {
+    display: block;
+    padding: 10px 0;
+    font-size: 1.1rem;
+    color: white;
+    text-decoration: none;
+}
+
+.sidebar li a:hover {
+    background-color: #0056b3;
+    /* Darker shade on hover */
+    border-radius: 5px;
+}
+
+.widget {
+    border-radius: 8px;
+}
+
+.widget p.h2 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.widget.bg-primary {
+    background-color: #007bff;
+}
+
+.widget.bg-success {
+    background-color: #28a745;
+}
+
+.widget.bg-danger {
+    background-color: #dc3545;
+}
+
+.contact-support {
+    margin-top: 20px;
+}
+
+button {
+    margin-top: 10px;
+}
+
+
+/* Header Styles */
+
+.header {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-left h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.icon-container {
+    margin-left: 15px;
+    /* Space between icons */
+}
+
+.icon-container:hover {
+    color: #007bff;
+    /* Change color on hover */
+}
+
+.position-relative {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 40px;
+    /* Adjust based on the icon size */
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+    z-index: 1000;
+}
+
+.dropdown-menu li {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.dropdown-menu li:hover {
+    background-color: #f8f9fa;
+}
+
+.position-relative {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 40px;
+    /* Adjust based on the icon size */
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    z-index: 1000;
+    min-width: 150px;
+    /* Adjust dropdown width */
+}
+
+.dropdown-menu li {
+    padding: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.dropdown-menu li:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-menu {
+    border: 2px solid red;
+}
+
+
+/* Logout Option Styles */
+
+.logout-option {
+    margin-left: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Subtle background for hierarchy */
+}
+
+.logout-option:hover {
+    background-color: #0056b3;
+    /* Highlight on hover */
+    color: #fff;
+    text-decoration: none;
+}

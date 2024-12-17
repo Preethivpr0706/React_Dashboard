@@ -1,0 +1,125 @@
+/* Wrapper Styles */
+
+.view-appointments-page {
+    max-width: 100%;
+    /* Set to 100% for smaller screens */
+    margin: 20px auto;
+    /* Adjust margin for responsiveness */
+    background-color: #efeded;
+    padding: 20px;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    /* Ensure padding doesn't affect width */
+}
+
+.view-appointments-page h2,
+.view-appointments-page h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    /* Responsive font size */
+}
+
+.view-appointments-page .poc-value {
+    color: #6f7174;
+    font-size: 1rem;
+    /* Adjust font size for readability */
+}
+
+.view-appointments-page .poc-details {
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+
+/* Table Styles */
+
+.view-appointments-page table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    /* Adjust font size for smaller screens */
+}
+
+.view-appointments-page th,
+.view-appointments-page td {
+    border: 1px solid #2b2a2a;
+    padding: 10px;
+    text-align: left;
+    word-wrap: break-word;
+    /* Ensure content wraps within cells */
+}
+
+.view-appointments-page th {
+    background-color: #3f3e3e;
+    color: #ddd;
+}
+
+.view-appointments-page tbody tr:nth-child(odd) {
+    background-color: #cac7c7;
+}
+
+.view-appointments-page tbody tr:nth-child(even) {
+    background-color: #989595;
+}
+
+.view-appointments-page tbody tr:hover {
+    background-color: #c8e0eb;
+}
+
+
+/* Background for Appointment Section */
+
+.view-appointments {
+    background-color: #87CEEB;
+    padding: 10px;
+    /* Add padding for better spacing */
+}
+
+
+/* Responsive Design */
+
+@media screen and (max-width: 768px) {
+    .view-appointments-page {
+        padding: 15px;
+        /* Reduce padding on smaller screens */
+    }
+    .view-appointments-page h2,
+    .view-appointments-page h3 {
+        font-size: 1.2rem;
+        /* Smaller font size for headings */
+    }
+    .view-appointments-page .poc-details,
+    .view-appointments-page .poc-value {
+        font-size: 0.9rem;
+        /* Reduce text size for details */
+    }
+    .view-appointments-page table {
+        font-size: 0.8rem;
+        /* Reduce table font size */
+    }
+    .view-appointments-page th,
+    .view-appointments-page td {
+        padding: 5px;
+        /* Reduce padding for table cells */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .view-appointments-page {
+        margin: 10px;
+        /* Reduce margin for extra small screens */
+    }
+    .view-appointments-page table,
+    .view-appointments-page th,
+    .view-appointments-page td {
+        font-size: 0.7rem;
+        /* Further reduce font size */
+    }
+    .view-appointments-page h2,
+    .view-appointments-page h3 {
+        font-size: 1rem;
+        /* Further reduce heading size */
+    }
+}

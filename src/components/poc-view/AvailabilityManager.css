@@ -1,0 +1,134 @@
+/* CSS for AvailabilityManager with increased specificity */
+
+.availability-manager-page {
+    font-family: Arial, sans-serif;
+    margin: 0 auto;
+    max-width: 800px;
+}
+
+.availability-manager-page .availability-manager-heading {
+    text-align: center;
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.availability-manager-page .availability-manager-horizontal-line {
+    margin-bottom: 20px;
+    border: none;
+    border-top: 2px solid #ccc;
+}
+
+.availability-manager-page .availability-manager-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-form-group .availability-manager-label {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-date-tile {
+    padding: 10px 15px;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-date-tile:hover {
+    background-color: #e0e0e0;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-selected {
+    background-color: #f71afb !important;
+    color: #fff !important;
+    border-color: #0f5065 !important;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-blocked {
+    background-color: #d32f2f;
+    color: #fff;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-partial {
+    background-color: #fbc02d;
+    color: #fff;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-available-dates .availability-manager-available {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-availability input[type="radio"] {
+    margin-right: 5px;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-timings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-timings .availability-manager-timing {
+    padding: 8px 12px;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-timings .availability-manager-timing:hover {
+    background-color: #e0e0e0;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-timings .availability-manager-selected {
+    background-color: #f71afb;
+    color: #fff;
+    border-color: #0f5065;
+}
+
+.availability-manager-page .availability-manager-form .availability-manager-timings .availability-manager-blocked {
+    background-color: #d32f2f;
+    color: #fff;
+}
+
+.availability-manager-page .availability-manager-update-button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    align-self: center;
+    font-size: 1em;
+}
+
+.availability-manager-page .availability-manager-update-button:hover {
+    background-color: #0056b3;
+}
+
+.availability-manager-page .availability-manager-message {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 1em;
+    font-weight: bold;
+}

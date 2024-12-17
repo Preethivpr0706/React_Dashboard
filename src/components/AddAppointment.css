@@ -1,0 +1,149 @@
+/* General Page Styles */
+
+.appointment-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.appointment-container h2 {
+    text-align: center;
+    color: #343a40;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.appointment-container .step-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.appointment-container .form-control {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+.appointment-container .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+}
+
+.appointment-container .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.appointment-container .btn-primary {
+    background-color: #007bff;
+    color: white;
+    margin-left: 70%;
+}
+
+.appointment-container .btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.appointment-container .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.appointment-container .btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.appointment-container .btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.appointment-container .btn-success:hover {
+    background-color: #218838;
+}
+
+
+/* Step Indicator Styles */
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.step-indicator .step {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.step-indicator .step.active {
+    color: #007bff;
+}
+
+.step-indicator .step.completed {
+    color: #28a745;
+}
+
+
+/* Confirmation Page Styles */
+
+.confirmation-page {
+    text-align: center;
+    color: #343a40;
+}
+
+.confirmation-page h4 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.confirmation-page p {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.confirmation-page .btn {
+    margin-top: 20px;
+}
+
+.appointment-container .error-text {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+
+/* Responsive Styles */
+
+@media (max-width: 768px) {
+    .appointment-container {
+        padding: 15px;
+    }
+    .appointment-container h2 {
+        font-size: 1.5rem;
+    }
+    .appointment-container .form-control {
+        font-size: 0.9rem;
+    }
+    .appointment-container .btn {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}

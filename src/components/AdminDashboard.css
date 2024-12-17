@@ -1,0 +1,167 @@
+/* Encapsulation */
+
+.admin-dashboard {
+    font-family: Arial, sans-serif;
+}
+
+
+/* Sidebar Styles */
+
+.admin-dashboard .sidebar {
+    background-color: #007bff;
+    /* Primary Blue */
+    color: white;
+    width: 250px;
+    height: 100vh;
+    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    /* Ensure it's above other elements */
+}
+
+.admin-dashboard .sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.admin-dashboard .sidebar.open {
+    transform: translateX(0);
+}
+
+.admin-dashboard .sidebar-header {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 20px;
+    border-bottom: 1px solid #fff;
+}
+
+.admin-dashboard .sidebar ul {
+    padding: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.admin-dashboard .sidebar ul li {
+    margin: 15px 0;
+}
+
+.admin-dashboard .sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 10px 20px;
+    transition: background-color 0.3s ease-in-out;
+    border-radius: 4px;
+}
+
+.admin-dashboard .sidebar ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+
+/* Main Content Styles */
+
+.admin-dashboard .main-content {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease-in-out;
+    width: calc(100% - 250px);
+}
+
+.admin-dashboard .main-content.full-width {
+    margin-left: 0;
+    width: 100%;
+}
+
+
+/* Header Styles */
+
+.admin-dashboard header {
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    /* Ensure it’s above sidebar */
+}
+
+.admin-dashboard header .btn-primary {
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+
+/* Dropdown Styles */
+
+.admin-dashboard header .dropdown .dropdown-menu {
+    min-width: 150px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-dashboard header .dropdown .dropdown-menu a {
+    padding: 10px 15px;
+    color: #000;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.admin-dashboard header .dropdown .dropdown-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* Dashboard Widgets */
+
+.admin-dashboard .widget {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.admin-dashboard .widget h4 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+
+/* Quick Actions */
+
+.admin-dashboard .widget button {
+    background-color: white;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.admin-dashboard .widget button:hover {
+    background-color: #e8e8e8;
+}
+
+
+/* Contact Support */
+
+.admin-dashboard .contact-support button {
+    border: none;
+    font-size: 1rem;
+    padding: 10px 15px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.admin-dashboard .contact-support button:hover {
+    background-color: #ff6666;
+}
+
+
+/* Logout Button */
+
+.admin-dashboard .settings .dropdown-item.logout {
+    color: red;
+    font-weight: bold;
+}
+
+.admin-dashboard .settings .dropdown-item.logout:hover {
+    background-color: #ffe6e6;
+}

@@ -1,0 +1,99 @@
+/* General page styling */
+
+.logout-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #6610f2;
+    font-family: 'Verdana, Geneva, sans-serif';
+}
+
+
+/* Container styling */
+
+.logout-container {
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.logout-container:hover {
+    transform: scale(1.02);
+}
+
+
+/* Title styling */
+
+.logout-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333333;
+    margin-bottom: 20px;
+}
+
+
+/* Message styling */
+
+.logout-message {
+    font-size: 18px;
+    color: #555555;
+    margin-bottom: 25px;
+}
+
+
+/* Button group layout */
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+}
+
+
+/* Common button styling */
+
+.button {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+
+/* Logout button */
+
+.logout-button {
+    background-color: #6610f2;
+    /* Red */
+    color: #ffffff;
+}
+
+.logout-button:hover {
+    background-color: #3c1183;
+    /* Darker Red */
+    transform: scale(1.05);
+}
+
+
+/* Cancel button */
+
+.cancel-button {
+    background-color: #a0aec0;
+    /* Gray */
+    color: #ffffff;
+}
+
+.cancel-button:hover {
+    background-color: #718096;
+    /* Darker Gray */
+    transform: scale(1.05);
+}
