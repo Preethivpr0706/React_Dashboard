@@ -155,13 +155,23 @@
 }
 
 
-/* Logout Button */
+/* Sidebar Button Styles */
 
-.admin-dashboard .settings .dropdown-item.logout {
-    color: red;
-    font-weight: bold;
+.admin-dashboard .sidebar ul li .link-button {
+    background: none;
+    /* Keeps the sidebar button background clean */
+    border: none;
+    color: white;
+    /* Ensures text is white */
+    text-align: left;
+    width: 100%;
+    padding: 10px 20px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.admin-dashboard .settings .dropdown-item.logout:hover {
-    background-color: #ffe6e6;
+.admin-dashboard .sidebar ul li .link-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Adds hover effect for sidebar buttons */
 }

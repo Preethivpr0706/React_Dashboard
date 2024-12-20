@@ -8,9 +8,11 @@
 
 .availability-manager-page .availability-manager-heading {
     text-align: center;
-    font-size: 2em;
-    color: #333;
+    font-size: 2.5 rem;
+    color: #000;
+    margin-top: 20px;
     margin-bottom: 20px;
+    border-color: #ccc;
 }
 
 .availability-manager-page .availability-manager-horizontal-line {

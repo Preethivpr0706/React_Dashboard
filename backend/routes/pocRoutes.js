@@ -16,14 +16,27 @@ const {
     getAvailableTimesForUpdate,
     getAvailableDatesForUpdate,
     updatePassword,
-    matchLoginCredentials
+    matchLoginCredentials,
+    requestPasswordReset,
+    resetPassword,
+    getClientFromPOC,
+    pocAppointmentCount,
+    pocTypeAppointments,
+    pocTodayAppointments,
+    addPOC,
+    fetchPOC,
+    fetchAppointmentDetails,
+    getDoctorsForClient,
+    adminAppointmentCount,
+    fetchDepartmentDoctorCount
 } = require("../controllers/pocController");
 
-router.get('/clients', getClients);
+
+router.post('/clients', getClients);
 router.post("/users", createUser);
-router.get("/departments", getDepartments);
-router.get("/pocs/:departmentId", getPocsByDepartment);
-router.get("/appointments/:pocId", getAppointmentDetailsForPoc);
+router.post("/departments", getDepartments);
+router.post("/pocs", getPocsByDepartment);
+router.post("/appointments", getAppointmentDetailsForPoc);
 router.post("/pocs/available-dates", getAvailableDates);
 router.post("/pocs/available-times", getAvailableTimes);
 router.post("/create-appointments", createAppointment);
@@ -32,10 +45,20 @@ router.post("/pocs/available-dates-update", getAvailableDatesForUpdate);
 router.post('/pocs/update-full', updateFullAvailability);
 router.post('/pocs/update-partial', updatePartialAvailability);
 router.post('/verify-poc-email', verifyPOCEmail);
-router.get('/verify-email/:token/:pocId', verifyEmail);
+router.post('/verify-email', verifyEmail);
 router.post('/update-password', updatePassword);
 router.post('/poc-login', matchLoginCredentials);
-
-//poc dashboard
+router.post('/request-password-reset', requestPasswordReset);
+router.post('/reset-password', resetPassword);
+router.post('/getClientId', getClientFromPOC);
+router.post('/poc/appointment-count', pocAppointmentCount);
+router.post('/poc/typeAppointment', pocTypeAppointments);
+router.post("/poc/todays-appointments", pocTodayAppointments);
+router.post("/add-poc", addPOC);
+router.get('/doctor/:pocId', fetchPOC);
+router.get('/poc/appointments/:pocId', fetchAppointmentDetails);
+router.post("/poc/get-doctors", getDoctorsForClient);
+router.post('/admin/appointment-count', adminAppointmentCount);
+router.post('/admin/total-departments-doctors', fetchDepartmentDoctorCount);
 
 module.exports = router;

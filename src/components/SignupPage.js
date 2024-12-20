@@ -8,12 +8,19 @@ const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState(''); // To store success/failure message
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // To disable the button after successful verification
 
   // Fetch clients from the database
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await fetch('/api/clients');
+        const response = await fetch('/api/clients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}), // If any additional data is required, include it here
+        });
         const data = await response.json();
         setClients(data);
       } catch (error) {
@@ -23,43 +30,43 @@ const SignupPage = () => {
     fetchClients();
   }, []);
 
-  const handleSubmit = async (e) => {   
-    e.preventDefault();   
-    setSent(false);   
-    setMessage('');   
-     
-    if (!selectedClient || !email) {   
-      setMessage('Please select a client and enter an email.');   
-      return;   
-    }   
-     
-    try {   
-      // Send request to verify email   
-      const response = await fetch('/api/verify-poc-email', {   
-       method: 'POST',   
-       headers: {   
-         'Content-Type': 'application/json',   
-       },   
-       body: JSON.stringify({   
-         clientId: selectedClient,   
-         email: email,   
-       }),   
-      });   
-     
-      const result = await response.json();   
-     
-      if (result.success) {   
-       setSent(true);   
-       setMessage(result.message);   
-      } else {   
-       setMessage(result.message);   
-      }   
-    } catch (error) {   
-      console.error('Error verifying email:', error.message);   
-      setMessage('An error occurred. Please try again later.');   
-    }   
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSent(false);
+    setMessage('');
+
+    if (!selectedClient || !email) {
+      setMessage('Please select a client and enter an email.');
+      return;
+    }
+
+    try {
+      // Send request to verify email
+      const response = await fetch('/api/verify-poc-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientId: selectedClient,
+          email: email,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSent(true);
+        setMessage(result.message);
+        setIsButtonDisabled(true); // Disable the button after successful verification
+      } else {
+        setMessage(result.message);
+      }
+    } catch (error) {
+      console.error('Error verifying email:', error.message);
+      setMessage('An error occurred. Please try again later.');
+    }
   };
- 
 
   return (
     <div className="sign-up-page">
@@ -97,7 +104,7 @@ const SignupPage = () => {
               className="form-control"
             />
           </div>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isButtonDisabled}>
             Verify Your Email
           </button>
           {message && (

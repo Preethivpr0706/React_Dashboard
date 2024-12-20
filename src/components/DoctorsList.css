@@ -1,0 +1,142 @@
+/* Container */
+
+.doctors-table-container {
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #efeded;
+    /* Matches "Today's Appointments" background */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+.doctor-list-container {
+    background-color: #87CEEB;
+}
+
+
+/* Heading */
+
+.doctors-table-heading {
+    color: #333;
+    /* Matches the heading color of "Today's Appointments" */
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+    /* Matches "Today's Appointments" heading size */
+}
+
+
+/* Table Container */
+
+.doctors-table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+    /* Enables horizontal scrolling for smaller screens */
+}
+
+
+/* Table */
+
+.doctors-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.doctors-table th,
+.doctors-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #2b2a2a;
+    border-left: 1px solid #2b2a2a;
+    border-right: 1px solid #2b2a2a;
+    /* Matches the border style of "Today's Appointments" */
+}
+
+.doctors-table th {
+    background-color: #3f3e3e;
+    /* Matches the header background color */
+    color: #ddd;
+    /* Matches the header text color */
+}
+
+.doctors-table tr:nth-child(odd) {
+    background-color: #cac7c7;
+    /* Matches odd row background color */
+}
+
+.doctors-table tr:nth-child(even) {
+    background-color: #989595;
+    /* Matches even row background color */
+}
+
+.doctors-table tr:hover {
+    background-color: #c8e0eb;
+    /* Matches hover effect color */
+}
+
+.doctors-table p {
+    text-align: center;
+    color: #666;
+    /* Matches message text color */
+}
+
+
+/* Loading and Error Message */
+
+.doctors-loading,
+.doctors-error {
+    text-align: center;
+    color: #666;
+    /* Matches the error/loading color */
+    font-size: 1rem;
+}
+
+
+/* Responsive Design */
+
+
+/* Adjust for widths below 1000px */
+
+@media screen and (max-width: 1000px) {
+    .doctors-table-container {
+        padding: 15px;
+    }
+    .doctors-table-heading {
+        font-size: 1.3rem;
+    }
+    .doctors-table {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Adjust for widths below 768px */
+
+@media screen and (max-width: 768px) {
+    .doctors-table-heading {
+        font-size: 1.2rem;
+        text-align: left;
+    }
+    .doctors-table {
+        font-size: 0.8rem;
+    }
+}
+
+
+/* Adjust for widths below 480px */
+
+@media screen and (max-width: 480px) {
+    .doctors-table-container {
+        padding: 10px;
+    }
+    .doctors-table-heading {
+        font-size: 1rem;
+    }
+    .doctors-table {
+        font-size: 0.7rem;
+    }
+}

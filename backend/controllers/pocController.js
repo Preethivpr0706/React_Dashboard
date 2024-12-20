@@ -3,18 +3,18 @@ const moment = require("moment-timezone");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-// Fetch clients from the Client table
+
 async function getClients(req, res) {
     try {
-        const [clients] = await pool.execute(
-            `SELECT Client_Name, Client_ID FROM Client`
-        );
-        res.json(clients);
+        // Fetch clients from the database
+        const [clients] = await pool.execute('SELECT Client_ID, Client_Name FROM client');
+        res.json(clients); // Send the list of clients to the frontend
     } catch (error) {
-        console.error('Error fetching clients:', error.message);
-        res.status(500).json({ message: 'Error fetching clients' });
+        console.error('Error fetching clients:', error);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 }
+
 
 async function verifyPOCEmail(req, res) {
     const { clientId, email } = req.body;
@@ -28,18 +28,23 @@ async function verifyPOCEmail(req, res) {
 
         const pocId = rows[0].POC_ID;
 
-        // Generate a token   
+        // Check if a password already exists for the given email  
+        if (rows[0].Password !== null) {
+            return res.status(400).json({ success: false, message: 'Email already registered. Please login to continue.' });
+        }
+
+        // Generate a token    
         const token = crypto.randomBytes(32).toString('hex');
 
-        // Store the token temporarily   
+        // Store the token temporarily    
         await pool.execute('INSERT INTO verification_tokens (email, token) VALUES (?, ?)', [email, token]);
 
-        // Send email using nodemailer   
+        // Send email using nodemailer    
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
                 user: 'preethivpr0706@gmail.com',
-                pass: 'wtkxtzdfgyltercn', // App password   
+                pass: 'wtkxtzdfgyltercn', // App password    
             },
         });
 
@@ -56,16 +61,17 @@ async function verifyPOCEmail(req, res) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Internal server error.' });
     }
-};
+}
+
 
 
 async function verifyEmail(req, res) {
-    const { token, pocId } = req.params;
-    console.log('Received token:', req.params.token);
-    console.log('Received pocId:', req.params.pocId);
+    const { token, pocId } = req.body; // Use req.body to receive data
+    console.log('Received token:', token);
+    console.log('Received pocId:', pocId);
 
     try {
-        // Check for token in the database  
+        // Check for token in the database
         const [rows] = await pool.execute('SELECT * FROM verification_tokens WHERE token = ?', [token]);
 
         if (rows.length === 0) {
@@ -74,18 +80,18 @@ async function verifyEmail(req, res) {
 
         const email = rows[0].email;
 
-        // Check if the token has already been used  
+        // Check if the token has already been used
         if (rows[0].used_at !== null) {
-            // Delete the token  
+            // Delete the token
             await pool.execute('DELETE FROM verification_tokens WHERE token = ?', [token]);
 
             return res.json({ success: true, message: 'Email has already been verified.', email });
         }
 
-        // Mark the token as used  
+        // Mark the token as used
         await pool.execute('UPDATE verification_tokens SET used_at = NOW() WHERE token = ?', [token]);
 
-        // Delete the token  
+        // Delete the token
         await pool.execute('DELETE FROM verification_tokens WHERE token = ?', [token]);
 
         res.json({ success: true, message: 'Email verified successfully!', email, pocId });
@@ -94,6 +100,7 @@ async function verifyEmail(req, res) {
         res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 }
+
 
 // Update password  
 const bcrypt = require('bcrypt');
@@ -116,17 +123,23 @@ async function updatePassword(req, res) {
 
 
 async function matchLoginCredentials(req, res) {
-    const { email, password, role } = req.body;
-
-    if (role === 'admin') {
-        if (email === 'admin@gmail.com' && password === 'Admin123') {
-            return res.json({ success: true, message: 'Login successful!' });
-        } else {
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-        }
-    }
+    const { email, password, role, clientId } = req.body;
 
     try {
+        if (role === 'admin') {
+            // Check admin credentials
+            const [admin] = await pool.execute(
+                "SELECT * FROM client WHERE Admin_Email = ? AND Admin_Password = ? AND Client_ID = ?", [email, password, clientId]
+            );
+
+            if (admin.length === 0) {
+                return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+            }
+
+            return res.json({ success: true, message: 'Login successful!', clientId });
+        }
+
+        // Check POC credentials
         const [rows] = await pool.execute('SELECT POC_ID, Password FROM poc WHERE Email = ?', [email]);
 
         if (rows.length === 0) {
@@ -136,24 +149,88 @@ async function matchLoginCredentials(req, res) {
         const pocId = rows[0].POC_ID;
         const hashedPassword = rows[0].Password;
 
-        // Compare the provided password with the hashed password   
+        // Compare the provided password with the hashed password
         const isValidPassword = await bcrypt.compare(password, hashedPassword);
 
         if (!isValidPassword) {
             return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
-        res.json({ success: true, message: 'Login successful!', pocId });
+        return res.json({ success: true, message: 'Login successful!', pocId });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Failed to login.' });
+        return res.status(500).json({ success: false, message: 'Failed to login.' });
     }
-};
+}
 
+async function requestPasswordReset(req, res) {
+    const { email } = req.body;
+    try {
+        // Check if the email exists
+        const [rows] = await pool.execute('SELECT POC_ID FROM poc WHERE Email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Email not found." });
+        }
 
-// Fetch departments from the List table
+        const token = crypto.randomBytes(32).toString('hex');
+        const pocId = rows[0].POC_ID;
+
+        // Store the token
+        await pool.execute('INSERT INTO verification_tokens (email, token) VALUES (?, ?)', [email, token]);
+
+        // Send email
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: 'preethivpr0706@gmail.com',
+                pass: 'wtkxtzdfgyltercn',
+            },
+        });
+
+        const resetLink = `http://localhost:3000/reset-password/${token}/${pocId}`;
+
+        await transporter.sendMail({
+            to: email,
+            subject: 'Password Reset Request',
+            html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`,
+        });
+
+        res.json({ success: true, message: 'Password reset email sent.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
+}
+
+async function resetPassword(req, res) {
+    const { token, pocId, newPassword } = req.body;
+
+    try {
+        // Validate token
+        const [rows] = await pool.execute('SELECT * FROM verification_tokens WHERE token = ? AND email = (SELECT Email FROM poc WHERE POC_ID = ?)', [token, pocId]);
+        if (rows.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired token.' });
+        }
+
+        const email = rows[0].email;
+
+        // Hash and update password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.execute('UPDATE poc SET Password = ? WHERE Email = ? AND POC_ID = ?', [hashedPassword, email, pocId]);
+
+        // Delete the token
+        await pool.execute('DELETE FROM verification_tokens WHERE token = ?', [token]);
+
+        res.json({ success: true, message: 'Password reset successful.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
+}
+
+// Fetch departments from the List table  
 async function getDepartments(req, res) {
-    const clientId = 1; // Hardcoded client ID (can be dynamic if required)
+    const clientId = req.body.clientId;
     try {
         const [departments] = await pool.execute(
             `SELECT Key_name, Value_name, Item_ID as departmentId FROM list WHERE Client_ID = ? AND Key_name = 'DEPARTMENT' ORDER BY Display_Order`, [clientId]
@@ -165,10 +242,10 @@ async function getDepartments(req, res) {
     }
 }
 
-// Fetch POCs by department
+// Fetch POCs by department  
 async function getPocsByDepartment(req, res) {
-    const { departmentId } = req.params;
-    const clientId = 1; // Hardcoded client ID
+    const { departmentId } = req.body;
+    const clientId = req.body.clientId;
     try {
         const [pocs] = await pool.execute(
             `SELECT * FROM poc WHERE Client_ID = ? AND Department_ID = ?`, [clientId, departmentId]
@@ -179,11 +256,13 @@ async function getPocsByDepartment(req, res) {
         res.status(500).json({ message: 'Error fetching POCs' });
     }
 }
-// Function to fetch POC details and their appointments
+// Function to fetch POC details and their appointments  
 const getAppointmentDetailsForPoc = async(req, res) => {
     try {
-        const { pocId } = req.params;
-        const clientId = 1; // Hardcoded client ID
+        console.log(req.body);
+        const pocId = req.body.pocId;
+        const clientId = req.body.clientId;
+        console.log(clientId);
         const query1 = `SELECT * FROM poc_available_slots WHERE POC_ID = ? AND (Schedule_Date > CURDATE() OR (Schedule_Date = CURDATE() AND Start_Time >= CURTIME())) ORDER BY Schedule_Date, Start_Time`;
         const query2 = `SELECT * FROM poc_schedules WHERE POC_ID = ?`;
         const query3 = `SELECT Client_Name FROM client WHERE Client_ID = ?`;
@@ -232,7 +311,6 @@ const getAppointmentDetailsForPoc = async(req, res) => {
         res.status(500).json({ error: "Error fetching appointment details" });
     }
 };
-
 
 // Helper function to get the day of the week from a date
 function getDayOfWeek(date) {
@@ -343,14 +421,14 @@ const getAvailableTimes = async(req, res) => {
 };
 
 
-//Create appointment
+//Create appointment  
 const createAppointment = async(req, res) => {
     const { userId, pocId, date, time, type } = req.body;
+    const clientId = req.body.clientId;
     console.log(req.body);
-    const clientId = 1;
 
     try {
-        // Insert the new appointment
+        // Insert the new appointment  
         const [result] = await pool.execute(
             "INSERT INTO Appointments (Client_ID, User_ID, POC_ID, Appointment_Date, Appointment_Time, Appointment_Type, Status, Is_Active) VALUES (?, ?, ?, ?, ?, ?, 'Confirmed', true)", [clientId, userId, pocId, date, time, type]
         );
@@ -359,20 +437,20 @@ const createAppointment = async(req, res) => {
 
         // Update available slots
         const updateQuery = `
-            UPDATE POC_Available_Slots
-            SET appointments_per_slot = appointments_per_slot - 1
-            WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ? AND appointments_per_slot > 0;
-        `;
+     UPDATE POC_Available_Slots
+     SET appointments_per_slot = appointments_per_slot - 1
+     WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ? AND appointments_per_slot > 0;
+  `;
         const [updateResult] = await pool.execute(updateQuery, [pocId, date, time]);
 
         if (updateResult.affectedRows === 0) {
             console.warn("No available slots to update for the given POC ID, date, and time.");
-            // Optionally handle this scenario by reverting the insert operation, if necessary.
+            // Optionally handle this scenario by reverting the insert operation, if necessary.  
         }
 
         res.json({ appointmentId: result.insertId });
     } catch (error) {
-        console.error("Error in createAppointment function:", error.message); // Log the exact error
+        console.error("Error in createAppointment function:", error.message); // Log the exact error  
         res.status(500).json({ error: error.message });
     }
 };
@@ -491,6 +569,258 @@ ORDER BY Schedule_Date;
     }
 };
 
+const getClientFromPOC = async(req, res) => {
+    const { pocId } = req.body;
+    try {
+        const [pocs] = await pool.execute(
+            `SELECT * FROM poc WHERE POC_ID=?`, [pocId]
+        );
+        res.json(pocs);
+    } catch (error) {
+        console.error('Error fetching POCs:', error.message);
+        res.status(500).json({ message: 'Error fetching POCs' });
+    }
+}
+
+const pocAppointmentCount = async(req, res) => {
+    const { pocId, status } = req.body;
+    try {
+        const [rows] = await pool.execute(
+            "SELECT COUNT(*) as count FROM Appointments WHERE POC_ID=? AND Status=? AND (Appointment_Date > CURDATE() OR (Appointment_Date = CURDATE() AND Appointment_Time >= CURTIME()))", [pocId, status]
+        );
+
+        const appointmentCount = rows[0].count; // Extract the count value
+        res.json({ count: appointmentCount }); // Respond with the count
+    } catch (error) {
+        console.error("Error fetching appointment count:", error.message);
+        res.status(500).json({ message: "Error fetching appointment count" });
+    }
+};
+
+const pocTypeAppointments = async(req, res) => {
+    const { pocId, type } = req.body;
+    try {
+        const [rows] = await pool.execute(
+            "SELECT COUNT(*) AS count FROM Appointments WHERE POC_ID=? AND Status='Confirmed' AND Appointment_Type=? AND (Appointment_Date > CURDATE() OR (Appointment_Date = CURDATE() AND Appointment_Time >= CURTIME()))", [pocId, type]
+        );
+        const appointmentCount = rows[0].count;
+        res.json({ count: appointmentCount });
+
+    } catch (error) {
+        console.error("Error fetching appointment count:", error.message);
+        res.status(500).json({ message: "Error fetching appointment count" });
+    }
+};
+
+const pocTodayAppointments = async(req, res) => {
+    const { pocId } = req.body;
+
+    try {
+        const [appointments] = await pool.execute(
+            `SELECT 
+          Appointment_Time as AppointmentTime, 
+          Appointment_Type AS AppointmentType, 
+          COUNT(*) AS AppointmentCount
+        FROM Appointments
+        WHERE POC_ID = ? 
+          AND Appointment_Date = CURDATE()
+        GROUP BY AppointmentTime, AppointmentType
+        ORDER BY AppointmentTime`, [pocId]
+        );
+
+        res.json(appointments);
+    } catch (error) {
+        console.error("Error fetching today's appointments:", error.message);
+        res.status(500).json({ message: "Error fetching today's appointments" });
+    }
+};
+
+const addPOC = async(req, res) => {
+    const {
+        Client_ID,
+        Department_ID,
+        POC_Name,
+        Specialization,
+        Contact_Number,
+        Email,
+        Meet_Link,
+    } = req.body;
+
+    // Validate input  
+    if (!Client_ID ||
+        !Department_ID ||
+        !POC_Name ||
+        !Specialization ||
+        !Contact_Number ||
+        !Email ||
+        !Meet_Link
+    ) {
+        return res.status(400).json({ error: "All fields are required." });
+    }
+
+    // Insert new POC into database  
+    const sql = `  
+     INSERT INTO poc (Client_ID, Department_ID, POC_Name, Specialization, Contact_Number, Email, Meet_Link)  
+     VALUES (?, ?, ?, ?, ?, ?, ?)  
+    `;
+    const values = [
+        Client_ID,
+        Department_ID,
+        POC_Name,
+        Specialization,
+        Contact_Number,
+        Email,
+        Meet_Link,
+    ];
+
+    try {
+        const [result] = await pool.execute(sql, values);
+        return res.status(200).json({ pocId: result.insertId });
+    } catch (err) {
+        console.error("Error inserting data into database:", err);
+        return res
+            .status(500)
+            .json({ error: "Failed to add POC. Please try again later." });
+    }
+};
+
+// Fetch doctor (POC) details
+const fetchPOC = async(req, res) => {
+    const pocId = req.params.pocId;
+    const imageLink = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300';
+    const query = `
+      SELECT 
+        POC_Name AS name, 
+        Specialization AS specialization, 
+        'MD, FACC' AS qualification, 
+        Contact_Number AS phone, 
+        Email AS email, 
+        'Medical Center, New York' AS location, 
+        ? AS image
+      FROM POC 
+      WHERE POC_ID = ?;
+    `;
+
+    try {
+        const [result] = await pool.query(query, [imageLink, pocId]);
+        res.json(result[0]);
+    } catch (err) {
+        console.error("Error fetching POC details:", err);
+        res.status(500).send('Server error');
+    }
+};
+
+
+const fetchAppointmentDetails = async(req, res) => {
+    const pocId = req.params.pocId;
+    console.log("Fetching appointments for POC ID:", pocId);
+
+    const query = `
+        SELECT 
+            u.User_Name AS patientName, 
+            a.Appointment_Type AS reason,
+            TIME_FORMAT(a.Appointment_Time, '%h:%i %p') AS time,
+            CASE 
+                WHEN a.Appointment_Date = CURDATE() THEN 'Today' 
+                ELSE DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') 
+            END AS date
+        FROM Appointments a
+        JOIN Users u ON a.User_ID = u.User_ID
+        WHERE 
+            a.POC_ID = ? 
+            AND a.Status = 'Confirmed' 
+            AND a.Is_Active = TRUE
+            AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()));
+    `;
+
+    try {
+        const [appointments] = await pool.query(query, [pocId]);
+        console.log("Fetched appointments:", appointments);
+        res.json(appointments);
+    } catch (err) {
+        console.error("Error fetching appointments:", err);
+        res.status(500).send("Server error");
+    }
+};
+
+const getDoctorsForClient = async(req, res) => {
+    const { clientId } = req.body;
+
+    if (!clientId) {
+        return res.status(400).json({ error: "Client ID is required." });
+    }
+
+    try {
+        const query = `
+        SELECT 
+          poc.POC_ID AS pocId, 
+          poc.Specialization AS departmentName, 
+          poc.POC_Name AS pocName, 
+          poc.Contact_Number AS contactNumber, 
+          poc.Email AS email 
+        FROM poc 
+        WHERE poc.Client_ID = ?
+        ORDER BY poc.Specialization, poc.POC_Name
+      `;
+
+        const [rows] = await pool.query(query, [clientId]);
+        res.json(rows);
+    } catch (error) {
+        console.error("Error fetching doctors:", error);
+        res.status(500).json({ error: "Failed to fetch doctors." });
+    }
+};
+
+
+const adminAppointmentCount = async(req, res) => {
+    const { clientId, status } = req.body;
+    try {
+        const [rows] = await pool.execute(
+            "SELECT COUNT(*) as count FROM Appointments WHERE Client_ID=? AND Status=? AND (Appointment_Date > CURDATE() OR (Appointment_Date = CURDATE() AND Appointment_Time >= CURTIME()))", [clientId, status]
+        );
+
+        const appointmentCount = rows[0].count; // Extract the count value
+        res.json({ count: appointmentCount }); // Respond with the count
+    } catch (error) {
+        console.error("Error fetching appointment count:", error.message);
+        res.status(500).json({ message: "Error fetching appointment count" });
+    }
+};
+
+const fetchDepartmentDoctorCount = async(req, res) => {
+    const { clientId } = req.body;
+
+    try {
+        // Fetch total departments  
+        const departmentQuery = `  
+       SELECT COUNT(DISTINCT Value_name) AS totalDepartments  
+       FROM List  
+       WHERE Client_ID = ? AND Key_name = 'DEPARTMENT'  
+     `;
+        const [departments] = await pool.execute(departmentQuery, [clientId]);
+
+        // Fetch total doctors  
+        const doctorQuery = `  
+       SELECT COUNT(*) AS totalDoctors  
+       FROM POC p  
+       JOIN List l ON p.Department_ID = l.Item_ID  
+       WHERE p.Client_ID = ? AND l.Key_name = 'DEPARTMENT'  
+     `;
+        const [doctorCount] = await pool.execute(doctorQuery, [clientId]);
+
+        // Return both counts in a single response  
+        res.json({
+            totalDepartments: departments[0].totalDepartments,
+            totalDoctors: doctorCount[0].totalDoctors,
+        });
+
+    } catch (err) {
+        console.error("Error fetching department and doctor counts:", err);
+        res.status(500).json({ message: "Error fetching department and doctor counts" });
+    }
+};
+
+
 
 module.exports = {
     getClients,
@@ -508,5 +838,17 @@ module.exports = {
     updatePartialAvailability,
     getAvailableTimesForUpdate,
     getAvailableDatesForUpdate,
-    matchLoginCredentials
+    matchLoginCredentials,
+    requestPasswordReset,
+    resetPassword,
+    getClientFromPOC,
+    pocAppointmentCount,
+    pocTypeAppointments,
+    pocTodayAppointments,
+    addPOC,
+    fetchPOC,
+    fetchAppointmentDetails,
+    getDoctorsForClient,
+    adminAppointmentCount,
+    fetchDepartmentDoctorCount
 };

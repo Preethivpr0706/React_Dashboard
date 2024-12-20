@@ -1,0 +1,138 @@
+/* Base Styles for Today's Appointments */
+
+.todays-appointments-container {
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #efeded;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+
+/* Headings */
+
+.todays-appointments-heading {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+}
+
+.todays-appointments {
+    background-color: #87CEEB;
+}
+
+
+/* Loading and Error Message */
+
+.todays-appointments-loading,
+.todays-appointments-error {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+}
+
+
+/* Table Container */
+
+.todays-appointments-table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+    /* Enable horizontal scrolling for smaller screens */
+}
+
+.todays-appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.todays-appointments-table th,
+.todays-appointments-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #2b2a2a;
+}
+
+.todays-appointments-table th {
+    background-color: #3f3e3e;
+    color: #ddd;
+}
+
+.todays-appointments-table tr:nth-child(odd) {
+    background-color: #cac7c7;
+}
+
+.todays-appointments-table tr:nth-child(even) {
+    background-color: #989595;
+}
+
+.todays-appointments-table tr:hover {
+    background-color: #c8e0eb;
+}
+
+.todays-appointments-table p {
+    text-align: center;
+    color: #666;
+}
+
+
+/* Responsive Design */
+
+
+/* Adjust for widths below 1000px */
+
+@media screen and (max-width: 1000px) {
+    .todays-appointments-container {
+        padding: 15px;
+    }
+    .todays-appointments-heading {
+        font-size: 1.3rem;
+    }
+    .todays-appointments-table-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .todays-appointments-table {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Adjust for widths below 768px */
+
+@media screen and (max-width: 768px) {
+    .todays-appointments-heading {
+        font-size: 1.2rem;
+        text-align: left;
+    }
+    .todays-appointments-table {
+        font-size: 0.8rem;
+    }
+    .todays-appointments-button {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}
+
+
+/* Adjust for widths below 480px */
+
+@media screen and (max-width: 480px) {
+    .todays-appointments-container {
+        padding: 10px;
+    }
+    .todays-appointments-heading {
+        font-size: 1rem;
+    }
+    .todays-appointments-table {
+        font-size: 0.7rem;
+    }
+    .todays-appointments-button {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+}

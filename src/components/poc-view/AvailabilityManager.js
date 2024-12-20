@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 import './AvailabilityManager.css';
 
 const AvailabilityManager = () => {
+  const location = useLocation();
+  const pocId= location.state.pocId;
   const [selectedDate, setSelectedDate] = useState('');
   const [availability, setAvailability] = useState('full');
   const [timings, setTimings] = useState([]);
@@ -9,14 +12,14 @@ const AvailabilityManager = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [message, setMessage] = useState('');
 
+  
   useEffect(() => {
-    const fixedDoctor = { POC_ID: 1 }; // Hardcoded POC_ID for testing or production
-
+    
     // Fetch available dates immediately
     fetch('api/pocs/available-dates-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pocId: fixedDoctor.POC_ID }),
+      body: JSON.stringify({ pocId: pocId}),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -44,7 +47,7 @@ const AvailabilityManager = () => {
     fetch('api/pocs/available-times-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pocId: 1, date: dateObj.Schedule_Date }),
+      body: JSON.stringify({ pocId: pocId, date: dateObj.Schedule_Date }),
     })
       .then((response) => response.json())
       .then(setTimings)

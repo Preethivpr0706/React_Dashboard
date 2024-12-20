@@ -1,38 +1,57 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import "./Sidebar.css";
 
-const Sidebar = () => {
-  const [settingsExpanded, setSettingsExpanded] = useState(false); // Track if settings is expanded
+const Sidebar = ({ pocId, clientId }) => { // Accept pocId as a prop
   const navigate = useNavigate(); // React Router navigation hook
 
-  const toggleSettings = () => {
-    setSettingsExpanded(!settingsExpanded); // Toggle settings menu visibility
+  
+  const handleLogout = () =>{
+    navigate("/logout"); // Navigate to the logout page
+  } 
+  
+  const handleDashboard = () => {
+    navigate("/poc-dashboard",{state: {pocId}}); // Navigate to the dashboard page with the provided pocId
+  }
+
+  const handleAppointments = () => {
+    navigate(`/view-appointments/${pocId}`, { state: { clientId } }); // Navigate to the appointments page with the provided pocId
+  }
+
+  const handleTodaysAppointments = () => {
+    navigate(`/todays-appointments`, { state: { pocId } });
   };
 
-  const handleLogout = () => {
-    navigate('/logout'); // Navigate to the logout page
-  };
+  const handleUserProfile = () => {
+    navigate(`/poc-user-profile`, { state: { pocId } }); // Navigate to the user profile page with the provided pocId
+  }
 
   return (
     <div className="sidebar">
-      <div className="sidebar-header mb-4">
+      <div className="sidebar-header">
         <h4>MIOT DOCTOR</h4>
       </div>
-      <ul className="list-unstyled">
-        <li className="mb-3">
-          <a href="#" className="text-white text-decoration-none">Dashboard</a>
-        </li>
-        <li className="mb-3">
-          <a href="#" className="text-white text-decoration-none">Appointments</a>
-        </li>
-        <li className="mb-3">
-          <a href="#" className="text-white text-decoration-none">View Patients</a>
-        </li>
-        <li className="mb-3">
-          <a href="#" className="text-white text-decoration-none">My Profile</a>
+      <ul className="sidebar-menu">
+        <li>
+          <button className="menu-link" onClick={handleDashboard}>
+            Dashboard
+          </button>
         </li>
         <li>
-          <a className="text-white text-decoration-none" onClick={handleLogout}>Logout</a>
+          <button className="menu-link" onClick={handleAppointments}>Appointments</button>
+        </li>
+        <li>
+        <button className="menu-link" onClick={handleTodaysAppointments}>
+          Today's Appointments
+        </button>
+        </li>
+        <li>
+          <button className="menu-link" onClick={handleUserProfile}>My Profile</button>
+        </li>
+        <li>
+          <button className="menu-link" onClick={handleLogout}>
+            Logout
+          </button>
         </li>
       </ul>
     </div>

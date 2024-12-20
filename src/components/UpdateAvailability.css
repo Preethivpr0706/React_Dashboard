@@ -90,9 +90,13 @@
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #4CAF50;
+    background-color: #007bff;
     color: #fff;
     cursor: pointer;
+}
+
+.admin-page .update-button:hover {
+    background-color: #0056b3;
 }
 
 .admin-page .message {

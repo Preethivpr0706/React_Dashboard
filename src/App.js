@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ViewPOC from "./components/ViewPOC";
 import ViewAppointments from "./components/ViewAppointments";
-import BookAppointment from "./components/BookAppointment";
 import LoginPage from "./components/LoginPage";
 import AdminDashboard from "./components/AdminDashboard";
 import UpdateAvailability from "./components/UpdateAvailability";
@@ -13,7 +12,12 @@ import AvailabilityManager from "./components/poc-view/AvailabilityManager";
 import SignupPage from "./components/SignupPage";
 import EmailVerificationPage from "./components/EmailVerificationPage";
 import CreatePasswordPage from "./components/CreatePasswordPage";
-
+import ForgotPasswordPage from "./components/ForgotPasswordPage";
+import ResetPasswordPage from "./components/ResetPasswordPage";
+import TodaysAppointments from "./components/poc-view/TodaysAppointments";
+import AddPOC from "./components/AddPOC";
+import UserProfile from "./components/poc-view/UserProfile";
+import DoctorsList from "./components/DoctorsList";
 const App = () => {
   return (
     <Router>
@@ -29,10 +33,7 @@ const App = () => {
           <Route path="/view-poc" element={<ViewPOC />} />
           
           {/* VIEW POC: Appointments for a POC */}
-          <Route path="/view-appointments/:pocId" element={<ViewAppointments />} />
-
-          {/* Book appointment */}
-          <Route path="/book-appointment" element={<BookAppointment />} /> 
+          <Route path="/view-appointments/:pocId" element={<ViewAppointments />} /> 
 
           {/* Update availability */}
           <Route path="/update-availability" element={<UpdateAvailability />} />
@@ -41,7 +42,7 @@ const App = () => {
           <Route path="/add-new-appointment" element={<AddNewAppointment />} />
 
           {/* poc dashboard*/}
-          <Route path="/poc-dashboard/:pocId" element={<DoctorDashboard />} />  
+          <Route path="/poc-dashboard" element={<DoctorDashboard />} />  
 
           <Route path='/update-availability-poc' element={<AvailabilityManager />} />
 
@@ -55,6 +56,16 @@ const App = () => {
 
           <Route path="/create-password" element={<CreatePasswordPage />} />
 
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+          <Route path="/reset-password/:token/:pocId" element={<ResetPasswordPage />} />
+
+          <Route path="/todays-appointments" element={<TodaysAppointments />} />;
+
+          <Route path="/add-poc" element={<AddPOC />} />
+
+          <Route path="/poc-user-profile" element={<UserProfile />} />
+          <Route path="/doctors" element={<DoctorsList/>} />
 
         </Routes>
       </div>
