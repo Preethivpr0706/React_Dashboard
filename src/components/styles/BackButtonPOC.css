@@ -1,0 +1,34 @@
+.back-button-poc {
+    position: fixed;
+    /* Ensure it stays fixed at the top-right even when scrolling */
+    top: 20px;
+    /* Add some spacing from the top */
+    right: 20px;
+    /* Add spacing from the right */
+    color: black;
+    /* White text color for better contrast */
+    border: none;
+    padding: 15px;
+    /* Increase padding for a larger button */
+    cursor: pointer;
+    z-index: 1000;
+    /* Ensure it appears above all other elements */
+    display: flex;
+    /* Center the icon */
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    background: 0%;
+}
+
+.back-button-poc:hover {
+    background: 0%;
+    /* Darker blue on hover */
+    transform: scale(1.0);
+    /* Slight zoom-in effect on hover */
+}
+
+.back-button-poc svg {
+    font-size: 30px;
+    /* Increase the icon size */
+}

@@ -140,6 +140,15 @@ button {
     background-color: #dc3545;
 }
 
+.widget.card {
+    background-color: rgb(223, 227, 227);
+    cursor: pointer;
+}
+
+.widget.card:hover {
+    background-color: rgb(193, 196, 196);
+}
+
 .contact-support {
     margin-top: 20px;
 }

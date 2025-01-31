@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useNavigate, useLocation } from "react-router-dom";
-import './PocView.css';
+import '../styles/PocView.css';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -102,7 +102,7 @@ const DoctorDashboard = () => {
 
   const handleViewAppointments = () => {
     if (clientId) {
-      navigate(`/view-appointments/${pocId}`, { state: { clientId } });
+      navigate(`/view-appointments`, { state: { clientId, pocId } });
     } else {
       console.error("clientId is not available yet.");
     }
@@ -111,6 +111,19 @@ const DoctorDashboard = () => {
   const handleUpdateAvailability = () => {
     navigate("/update-availability-poc", { state: { pocId} });
   };
+
+  const handleViewAppointmentDetails = (param, value) => {  
+    navigate("/appointment-details", { state: { pocId, [param]: value } });  
+  };
+
+  const handleMeetLink = (param, value) => {  
+    navigate("/meet-link", { state: { pocId} });  
+  };
+
+  const handleFees = (param, value) => {
+    navigate("/fees", { state: { pocId} });  
+  };
+  
 
   return (
     <div className="d-flex">
@@ -124,27 +137,27 @@ const DoctorDashboard = () => {
 
           <div className="row">
             <div className="col-md-3 mb-4">
-              <div className="widget p-4 bg-light rounded shadow-sm">
-                <h4>Total Active Appointments</h4>
-                <p className="h2">{activeAppointments}</p>
+              <div className="widget card p-4 rounded shadow-sm" onClick={() => handleViewAppointmentDetails('status', 'Confirmed')}>  
+                <h4>Total Appointments</h4>  
+                <p className="h2">{activeAppointments}</p>  
+              </div> 
+            </div>
+            <div className="col-md-3 mb-4">
+              <div className="widget card p-4 rounded shadow-sm" onClick={() => handleViewAppointmentDetails('status', 'Cancelled')}>  
+                <h4>Cancelled Appointments</h4>  
+                <p className="h2">{canceledAppointments}</p>  
+              </div> 
+            </div>
+            <div className="col-md-3 mb-4">
+              <div className="widget card p-4 rounded shadow-sm" onClick={() => handleViewAppointmentDetails('type', 'Direct Consultation')}>  
+                <h4>Direct Appointments</h4>  
+                <p className="h2">{directAppointments}</p>  
               </div>
             </div>
             <div className="col-md-3 mb-4">
-              <div className="widget p-4 bg-light rounded shadow-sm">
-                <h4>Cancelled Appointments</h4>
-                <p className="h2">{canceledAppointments}</p>
-              </div>
-            </div>
-            <div className="col-md-3 mb-4">
-              <div className="widget p-4 bg-light rounded shadow-sm">
-                <h4>Direct Appointments</h4>
-                <p className="h2">{directAppointments}</p>
-              </div>
-            </div>
-            <div className="col-md-3 mb-4">
-              <div className="widget p-4 bg-light rounded shadow-sm">
-                <h4>Tele Appointments</h4>
-                <p className="h2">{teleAppointments}</p>
+              <div className="widget card p-4 rounded shadow-sm" onClick={() => handleViewAppointmentDetails('type', 'Tele Consultation')}>  
+                 <h4>Tele Appointments</h4>  
+                 <p className="h2">{teleAppointments}</p>  
               </div>
             </div>
           </div>
@@ -161,6 +174,20 @@ const DoctorDashboard = () => {
               <div className="widget p-4 bg-success text-white rounded shadow-sm">
                 <button className="btn btn-light w-100" onClick={handleUpdateAvailability}>
                   Update Doctors' Availability
+                </button>
+              </div>
+            </div>
+            <div className="col-md-6 mb-4">
+              <div className="widget p-4 bg-secondary text-white rounded shadow-sm">
+                <button className="btn btn-light w-100" onClick={handleMeetLink} >
+                  Add / Edit MeetLink
+                </button>
+              </div>
+            </div>
+            <div className="col-md-6 mb-4">
+              <div className="widget p-4 bg-info text-white rounded shadow-sm">
+                <button className="btn btn-light w-100" onClick={handleFees}>
+                  Add / Edit Fees
                 </button>
               </div>
             </div>

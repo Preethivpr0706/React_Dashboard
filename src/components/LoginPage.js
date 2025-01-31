@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";    
 import { useNavigate } from "react-router-dom"; // Import the useNavigate hook    
 import { Link } from "react-router-dom";    
-import "./LoginPage.css";    
+import "./styles/LoginPage.css";    
     
 const LoginPage = () => {    
   const [email, setEmail] = useState("");    

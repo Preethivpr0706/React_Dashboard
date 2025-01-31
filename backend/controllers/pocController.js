@@ -335,12 +335,12 @@ function getDayOfWeek(date) {
 
 // Create or update user details
 const createUser = async(req, res) => {
-    const { name, phone, email, location } = req.body;
+    const { name, phone, email, location, clientId } = req.body;
 
     try {
         console.log("Request body:", req.body); // Log incoming request data
         const [user] = await pool.execute(
-            "SELECT User_ID FROM Users WHERE User_Contact = ?", [phone]
+            "SELECT User_ID FROM Users WHERE User_Contact = ? and Client_ID= ?", [phone, clientId]
         );
 
         console.log("Existing user query result:", user); // Log query result
@@ -351,7 +351,7 @@ const createUser = async(req, res) => {
         }
 
         const [result] = await pool.execute(
-            "INSERT INTO Users (User_Name, User_Contact, User_Email, User_Location) VALUES (?, ?, ?, ?)", [name, phone, email, location]
+            "INSERT INTO Users (User_Name, User_Contact, User_Email, User_Location, Client_ID) VALUES (?, ?, ?, ?, ?)", [name, phone, email, location, clientId]
         );
 
         console.log("User created with ID:", result.insertId);
@@ -582,6 +582,7 @@ const getClientFromPOC = async(req, res) => {
     }
 }
 
+// poc dashboard - total and cancelled
 const pocAppointmentCount = async(req, res) => {
     const { pocId, status } = req.body;
     try {
@@ -597,6 +598,7 @@ const pocAppointmentCount = async(req, res) => {
     }
 };
 
+// poc dashboard - appointments by type
 const pocTypeAppointments = async(req, res) => {
     const { pocId, type } = req.body;
     try {
@@ -612,20 +614,64 @@ const pocTypeAppointments = async(req, res) => {
     }
 };
 
+// poc dashboard - appointments details
+const appointmentDetails = async(req, res) => {
+    const { pocId, status, type } = req.body;
+    try {
+        let query;
+        let params;
+
+        if (status) {
+            query = "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.POC_ID = ? AND a.Status = ? AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))";
+            params = [pocId, status];
+        } else if (type) {
+            query = "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.POC_ID = ? AND a.Appointment_Type = ? AND a.Status = 'Confirmed' AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))";
+            params = [pocId, type];
+        } else {
+            res.status(400).json({ message: "Invalid request" });
+            return;
+        }
+
+        const [rows] = await pool.execute(query, params);
+
+        const appointments = rows.map((row) => ({
+            AppointmentID: row.Appointment_ID,
+            UserName: row.User_Name,
+            UserContact: row.User_Contact,
+            UserLocation: row.User_Location,
+            POCName: row.POC_Name,
+            Specialization: row.Specialization,
+            AppointmentType: row.Appointment_Type,
+            AppointmentDate: row.Appointment_Date,
+            AppointmentTime: row.Appointment_Time,
+            Payment_Status: row.Payment_Status,
+        }));
+
+        res.json(appointments);
+    } catch (error) {
+        console.error("Error fetching appointment details:", error.message);
+        res.status(500).json({ message: "Error fetching appointment details" });
+    }
+};
+
+
 const pocTodayAppointments = async(req, res) => {
     const { pocId } = req.body;
 
     try {
         const [appointments] = await pool.execute(
             `SELECT 
-          Appointment_Time as AppointmentTime, 
-          Appointment_Type AS AppointmentType, 
-          COUNT(*) AS AppointmentCount
-        FROM Appointments
-        WHERE POC_ID = ? 
-          AND Appointment_Date = CURDATE()
-        GROUP BY AppointmentTime, AppointmentType
-        ORDER BY AppointmentTime`, [pocId]
+                a.Appointment_ID AS AppointmentId,
+                a.Appointment_Time AS AppointmentTime,
+                a.Appointment_Type AS AppointmentType,
+                u.User_Name AS PatientName,
+                a.Status,
+                a.Is_Active 
+            FROM Appointments a
+            JOIN Users u ON a.User_ID = u.User_ID
+            WHERE a.POC_ID = ? 
+              AND a.Appointment_Date = CURDATE()
+            ORDER BY a.Appointment_Time`, [pocId]
         );
 
         res.json(appointments);
@@ -635,6 +681,53 @@ const pocTodayAppointments = async(req, res) => {
     }
 };
 
+// API to update appointment status
+const updateAppointmentStatus = async(req, res) => {
+    const { appointmentId, status } = req.body;
+
+    try {
+        const isActive = status === "Confirmed" ? 1 : 0; // Revert isActive to 1 if status is Confirmed
+
+        await pool.execute(
+            `UPDATE Appointments 
+             SET Status = ?, Is_Active = ? 
+             WHERE Appointment_ID = ?`, [status, isActive, appointmentId]
+        );
+
+        res.json({ success: true, message: `Status updated to ${status}` });
+    } catch (error) {
+        console.error("Error updating appointment status:", error.message);
+        res.status(500).json({ message: "Error updating appointment status" });
+    }
+};
+
+const adminTodayAppointments = async(req, res) => {
+    const { clientId } = req.body; // Fetch clientId from request body
+
+    try {
+        const [appointments] = await pool.execute(
+            `SELECT 
+                a.Appointment_ID AS AppointmentId,
+                a.Appointment_Time AS AppointmentTime,
+                a.Appointment_Type AS AppointmentType,
+                u.User_Name AS PatientName,
+                a.Status,
+                a.Is_Active 
+            FROM Appointments a
+            JOIN Users u ON a.User_ID = u.User_ID
+            WHERE a.Client_ID = ?
+              AND a.Appointment_Date = CURDATE()
+            ORDER BY a.Appointment_Time`, [clientId]
+        );
+
+        res.json(appointments);
+    } catch (error) {
+        console.error("Error fetching today's appointments:", error.message);
+        res.status(500).json({ message: "Error fetching today's appointments" });
+    }
+};
+
+
 const addPOC = async(req, res) => {
     const {
         Client_ID,
@@ -643,25 +736,20 @@ const addPOC = async(req, res) => {
         Specialization,
         Contact_Number,
         Email,
-        Meet_Link,
+        Meet_Link = null, // Default to null if not provided  
+        Consultation_Fees = 0.00, // Default to null if not provided  
+        External_POC_ID = null, // New field  
     } = req.body;
 
-    // Validate input  
-    if (!Client_ID ||
-        !Department_ID ||
-        !POC_Name ||
-        !Specialization ||
-        !Contact_Number ||
-        !Email ||
-        !Meet_Link
-    ) {
-        return res.status(400).json({ error: "All fields are required." });
+    // Validate required input  
+    if (!Client_ID || !Department_ID || !POC_Name || !Specialization || !Contact_Number || !Email) {
+        return res.status(400).json({ error: "Required fields are missing." });
     }
 
     // Insert new POC into database  
     const sql = `  
-     INSERT INTO poc (Client_ID, Department_ID, POC_Name, Specialization, Contact_Number, Email, Meet_Link)  
-     VALUES (?, ?, ?, ?, ?, ?, ?)  
+       INSERT INTO poc (Client_ID, Department_ID, POC_Name, Specialization, Contact_Number, Email, Meet_Link, Fees, External_POC_ID)  
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)  
     `;
     const values = [
         Client_ID,
@@ -671,6 +759,8 @@ const addPOC = async(req, res) => {
         Contact_Number,
         Email,
         Meet_Link,
+        Consultation_Fees,
+        External_POC_ID,
     ];
 
     try {
@@ -678,11 +768,10 @@ const addPOC = async(req, res) => {
         return res.status(200).json({ pocId: result.insertId });
     } catch (err) {
         console.error("Error inserting data into database:", err);
-        return res
-            .status(500)
-            .json({ error: "Failed to add POC. Please try again later." });
+        return res.status(500).json({ error: "Failed to add POC. Please try again later." });
     }
 };
+
 
 // Fetch doctor (POC) details
 const fetchPOC = async(req, res) => {
@@ -710,7 +799,7 @@ const fetchPOC = async(req, res) => {
     }
 };
 
-
+//upcoming appointments in user profile page of POC
 const fetchAppointmentDetails = async(req, res) => {
     const pocId = req.params.pocId;
     console.log("Fetching appointments for POC ID:", pocId);
@@ -821,8 +910,228 @@ const fetchDepartmentDoctorCount = async(req, res) => {
 };
 
 
+const adminAppointmentDetails = async(req, res) => {
+    const { clientId, status } = req.body;
+    try {
+        const [rows] = await pool.execute(
+            "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.Client_ID = ? AND a.Status = ? AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))", [clientId, status]
+        );
+
+        const appointments = rows.map((row) => ({
+            AppointmentID: row.Appointment_ID,
+            UserName: row.User_Name,
+            UserContact: row.User_Contact,
+            UserLocation: row.User_Location,
+            POCName: row.POC_Name,
+            Specialization: row.Specialization,
+            AppointmentType: row.Appointment_Type,
+            AppointmentDate: row.Appointment_Date,
+            AppointmentTime: row.Appointment_Time,
+            Payment_Status: row.Payment_Status,
+        }));
+
+        res.json(appointments);
+    } catch (error) {
+        console.error("Error fetching appointment details:", error.message);
+        res.status(500).json({ message: "Error fetching appointment details" });
+    }
+};
+
+const adminDepartments = async(req, res) => {
+    const { clientId } = req.body;
+    try {
+        const departmentQuery = `  
+      SELECT DISTINCT l.Value_name AS DepartmentName,  
+      (SELECT COUNT(*) FROM POC p WHERE p.Department_ID = l.Item_ID AND p.Client_ID = ?) AS NoOfPOCs  
+      FROM List l  
+      WHERE l.Client_ID = ? AND l.Key_name = 'DEPARTMENT'  
+     `;
+        const [departments] = await pool.execute(departmentQuery, [clientId, clientId]);
+
+        // Convert the NoOfPOCs column to a number  
+        departments.forEach((dept) => {
+            dept.NoOfPOCs = parseInt(dept.NoOfPOCs);
+        });
+
+        res.json(departments);
+    } catch (err) {
+        console.error("Error fetching departments:", err);
+        res.status(500).json({ message: "Error fetching departments" });
+    }
+};
+
+const getSchedule = async(req, res) => {
+    console.log("Get Schedule fn called");
+    const pocId = req.params.pocId;
+    const query = "SELECT * FROM POC_Schedules WHERE POC_ID = ?";
+
+    try {
+        const results = await pool.query(query, [pocId]);
+        console.log(results);
+        const scheduleData = results[0].map((result) => ({
+            day: result.Day_of_Week,
+            timeIntervals: [{
+                startTime: result.Start_Time,
+                endTime: result.End_Time,
+                appointmentsPerSlot: result.appointments_per_slot,
+                slotDuration: result.slot_duration,
+            }, ],
+        }));
+
+        const groupedScheduleData = scheduleData.reduce((acc, current) => {
+            const existingDay = acc.find((day) => day.day === current.day);
+            if (existingDay) {
+                existingDay.timeIntervals.push(...current.timeIntervals);
+            } else {
+                acc.push(current);
+            }
+            return acc;
+        }, []);
+        console.log(groupedScheduleData);
+        res.send(groupedScheduleData);
+    } catch (err) {
+        console.error("Error fetching schedule:", err);
+        res.status(500).send({ message: "Error fetching schedule" });
+    }
+}
+
+
+const updateSchedule = async(req, res) => {
+    const schedule = req.body.schedule;
+    console.log(schedule);
+
+    if (schedule.length > 0) {
+        try {
+            // Delete existing schedule only for the specific days being updated
+            const deleteQuery = "DELETE FROM POC_Schedules WHERE POC_ID = ? AND Day_of_Week = ?";
+            for (const day of schedule) {
+                await pool.query(deleteQuery, [day.pocId, day.day]); // Deleting only the schedule for the specific day
+            }
+
+            // Insert new schedule for the POC
+            const insertQuery =
+                "INSERT INTO POC_Schedules (POC_ID, Day_of_Week, Start_Time, End_Time, appointments_per_slot, slot_duration) VALUES ?";
+            const values = schedule.flatMap((day) =>
+                day.timeIntervals.map((interval) => [
+                    day.pocId,
+                    day.day,
+                    interval.startTime,
+                    interval.endTime,
+                    interval.appointmentsPerSlot,
+                    interval.slotDuration,
+                ])
+            );
+            await pool.query(insertQuery, [values]);
+            res.send({ message: "Schedule updated successfully" });
+        } catch (err) {
+            console.error("Error updating schedule:", err);
+            res.status(500).send({ message: "Error updating schedule" });
+        }
+    } else {
+        res.send({ message: "No schedule data provided" });
+    }
+};
+
+
+const getMeetLink = async(req, res) => {
+    try {
+        const pocId = req.body.pocId;
+        console.log('Getting meet link for POC ID:', pocId);
+        const query = 'SELECT Meet_Link FROM POC WHERE POC_ID = ?';
+        const [results] = await pool.query(query, [pocId]);
+        if (results.length > 0 && results[0].Meet_Link) {
+            console.log('Meet link found:', results[0].Meet_Link);
+            res.send({ success: true, link: results[0].Meet_Link });
+        } else {
+            console.log('No meet link found');
+            res.send({ success: true, link: null });
+        }
+    } catch (err) {
+        console.error('Error getting meet link:', err);
+        res.status(500).send({ success: false, message: 'Error getting meet link' });
+    }
+};
+
+
+
+const UpdateMeetLink = async(req, res) => {
+    try {
+        const { pocId, link } = req.body;
+        console.log('Updating meet link for POC ID:', pocId, 'with link:', link);
+        const query = 'UPDATE POC SET Meet_Link = ? WHERE POC_ID = ?';
+        const result = pool.execute(query, [link, pocId]);
+        console.log('Meet link updated successfully');
+        res.send({ success: true });
+
+    } catch (err) {
+        console.error('Error updating meet link:', err);
+        res.status(500).send({ success: false, message: 'Error updating meet link' });
+    }
+};
+
+const getConsultationFees = async(req, res) => {
+    try {
+        const pocId = req.body.pocId;
+        console.log('Getting consultation fees for POC ID:', pocId);
+        const query = 'SELECT Fees FROM POC WHERE POC_ID = ?';
+        const [results] = await pool.query(query, [pocId]);
+        if (results.length > 0 && results[0].Fees) {
+            console.log('Consultation fees found:', results[0].Fees);
+            res.send({ success: true, fees: results[0].Fees });
+        } else {
+            console.log('No consultation fees found');
+            res.send({ success: true, fees: null });
+        }
+    } catch (err) {
+        console.error('Error getting consultation fees:', err);
+        res.status(500).send({ success: false, message: 'Error getting consultation fees' });
+    }
+};
+
+
+const updateConsultationFees = async(req, res) => {
+    try {
+        const { pocId, fees } = req.body;
+        console.log('Updating consultation fees for POC ID:', pocId, 'with fees:', fees);
+        const query = 'UPDATE POC SET Fees = ? WHERE POC_ID = ?';
+        const result = await pool.execute(query, [fees, pocId]);
+        console.log('Consultation fees updated successfully');
+        res.send({ success: true });
+    } catch (err) {
+        console.error('Error updating consultation fees:', err);
+        res.status(500).send({ success: false, message: 'Error updating consultation fees' });
+    }
+};
+
+const getUserDetails = async(req, res) => {
+    const { clientId } = req.body;
+
+    if (!clientId) {
+        return res.status(400).json({ error: 'Client ID is required' });
+    }
+
+    try {
+        const query = `
+        SELECT User_ID, User_Name, User_Contact, User_Email, User_Location
+        FROM users
+        WHERE Client_ID = ?`;
+        const [users] = await pool.execute(query, [clientId]);
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
 
 module.exports = {
+    getUserDetails,
+    getConsultationFees,
+    updateConsultationFees,
+    getMeetLink,
+    UpdateMeetLink,
+    getSchedule,
+    updateSchedule,
     getClients,
     verifyPOCEmail,
     verifyEmail,
@@ -845,10 +1154,15 @@ module.exports = {
     pocAppointmentCount,
     pocTypeAppointments,
     pocTodayAppointments,
+    adminTodayAppointments,
+    updateAppointmentStatus,
     addPOC,
     fetchPOC,
     fetchAppointmentDetails,
     getDoctorsForClient,
     adminAppointmentCount,
-    fetchDepartmentDoctorCount
+    fetchDepartmentDoctorCount,
+    appointmentDetails,
+    adminDepartments,
+    adminAppointmentDetails
 };

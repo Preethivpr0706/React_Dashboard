@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./Sidebar.css";
+import "../styles/Sidebar.css";
 
 const Sidebar = ({ pocId, clientId }) => { // Accept pocId as a prop
   const navigate = useNavigate(); // React Router navigation hook
@@ -15,7 +15,7 @@ const Sidebar = ({ pocId, clientId }) => { // Accept pocId as a prop
   }
 
   const handleAppointments = () => {
-    navigate(`/view-appointments/${pocId}`, { state: { clientId } }); // Navigate to the appointments page with the provided pocId
+    navigate(`/view-appointments/`, { state: { clientId, pocId } }); // Navigate to the appointments page with the provided pocId
   }
 
   const handleTodaysAppointments = () => {

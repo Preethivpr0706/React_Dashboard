@@ -3,12 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "../styles/TodaysAppointments.css";
-import BackButtonPOC from "./BackButtonPOC";
+import "./styles/TodaysAppointments.css";
+import BackButton from "./BackButton";
 
-const TodaysAppointments = () => {
+const TodaysAppointmentsAdmin = () => {
     const location = useLocation();
-    const pocId = location.state.pocId;
+    const clientId = location.state.clientId; 
+    const clientName = location.state.clientName;
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -22,10 +23,10 @@ const TodaysAppointments = () => {
     useEffect(() => {
         const fetchTodaysAppointments = async () => {
             try {
-                const response = await fetch("/api/poc/todays-appointments", {
+                const response = await fetch("/api/admin/todays-appointments", {  // Change API path
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pocId }),
+                    body: JSON.stringify({ clientId }),  // Send clientId
                 });
 
                 if (response.ok) {
@@ -42,104 +43,103 @@ const TodaysAppointments = () => {
         };
 
         fetchTodaysAppointments();
-    }, [pocId]);
+    }, [clientId]);
 
     const updateStatus = async (appointmentId, newStatus, previousStatus) => {
-      const confirmUpdate = window.confirm(`Are you sure you want to mark this appointment as ${newStatus}?`);
-      if (!confirmUpdate) return;
-  
-      try {
-          const response = await fetch("/api/poc/update-appointment-status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ appointmentId, status: newStatus }),
-          });
-  
-          if (response.ok) {
-              setAppointments((prev) =>
-                  prev.map((appt) =>
-                      appt.AppointmentId === appointmentId
-                          ? { ...appt, Status: newStatus, Is_Active: newStatus === "Confirmed" ? 1 : 0 }
-                          : appt
-                  )
-              );
-  
-              const toastId = toast.success(
-                  <div>
-                      Appointment marked as <b>{newStatus}</b>.{" "}
-                      <button 
-                          style={{ background: "transparent", border: "none", color: "#007bff", cursor: "pointer" }} 
-                          onClick={() => undoUpdateStatus(appointmentId, previousStatus, toastId)}
-                      >
-                          Undo
-                      </button>
-                  </div>,
-                  {
-                      position: "top-right",
-                      autoClose: 5000,
-                      hideProgressBar: false,
-                      closeOnClick: false,
-                      pauseOnHover: true,
-                      draggable: true,
-                  }
-              );
-          } else {
-              throw new Error("Failed to update status");
-          }
-      } catch (error) {
-          toast.error("Error updating appointment status", {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-          });
-      }
-  };
-  
-  const undoUpdateStatus = async (appointmentId, previousStatus, toastId) => {
-      try {
-          const response = await fetch("/api/poc/update-appointment-status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ appointmentId, status: previousStatus }),
-          });
-  
-          if (response.ok) {
-              setAppointments((prev) =>
-                  prev.map((appt) =>
-                      appt.AppointmentId === appointmentId
-                          ? { ...appt, Status: previousStatus, Is_Active: previousStatus === "Confirmed" ? 1 : 0 }
-                          : appt
-                  )
-              );
-  
-              toast.update(toastId, {
-                  render: `Undo successful! Status reverted to ${previousStatus}`,
-                  type: "success",
-                  autoClose: 3000,
-              });
-          } else {
-              throw new Error("Failed to undo status update");
-          }
-      } catch (error) {
-          toast.error("Error reverting appointment status", {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-          });
-      }
-  };
-  
+        const confirmUpdate = window.confirm(`Are you sure you want to mark this appointment as ${newStatus}?`);
+        if (!confirmUpdate) return;
+
+        try {
+            const response = await fetch("/api/admin/update-appointment-status", {  // Change API path
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ appointmentId, status: newStatus }),
+            });
+
+            if (response.ok) {
+                setAppointments((prev) =>
+                    prev.map((appt) =>
+                        appt.AppointmentId === appointmentId
+                            ? { ...appt, Status: newStatus, Is_Active: newStatus === "Confirmed" ? 1 : 0 }
+                            : appt
+                    )
+                );
+
+                const toastId = toast.success(
+                    <div>
+                        Appointment marked as <b>{newStatus}</b>.{" "}
+                        <button 
+                            style={{ background: "transparent", border: "none", color: "#007bff", cursor: "pointer" }} 
+                            onClick={() => undoUpdateStatus(appointmentId, previousStatus, toastId)}
+                        >
+                            Undo
+                        </button>
+                    </div>,
+                    {
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: false,
+                        pauseOnHover: true,
+                        draggable: true,
+                    }
+                );
+            } else {
+                throw new Error("Failed to update status");
+            }
+        } catch (error) {
+            toast.error("Error updating appointment status", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
+
+    const undoUpdateStatus = async (appointmentId, previousStatus, toastId) => {
+        try {
+            const response = await fetch("/api/admin/update-appointment-status", {  // Change API path
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ appointmentId, status: previousStatus }),
+            });
+
+            if (response.ok) {
+                setAppointments((prev) =>
+                    prev.map((appt) =>
+                        appt.AppointmentId === appointmentId
+                            ? { ...appt, Status: previousStatus, Is_Active: previousStatus === "Confirmed" ? 1 : 0 }
+                            : appt
+                    )
+                );
+
+                toast.update(toastId, {
+                    render: `Undo successful! Status reverted to ${previousStatus}`,
+                    type: "success",
+                    autoClose: 3000,
+                });
+            } else {
+                throw new Error("Failed to undo status update");
+            }
+        } catch (error) {
+            toast.error("Error reverting appointment status", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
 
     return (
         <>
             <ToastContainer />
-            <BackButtonPOC onClick={() => navigate("/back-button", { state: { pocId } })} />
+            <BackButton onClick={() => navigate("/back-button", { state: { clientId, clientName } })} />
             <div className="todays-appointments-container">
                 <h1 className="todays-appointments-heading">Today's Appointments</h1>
 
@@ -205,4 +205,4 @@ const TodaysAppointments = () => {
     );
 };
 
-export default TodaysAppointments;
+export default TodaysAppointmentsAdmin;

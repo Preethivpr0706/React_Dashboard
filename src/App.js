@@ -18,6 +18,14 @@ import TodaysAppointments from "./components/poc-view/TodaysAppointments";
 import AddPOC from "./components/AddPOC";
 import UserProfile from "./components/poc-view/UserProfile";
 import DoctorsList from "./components/DoctorsList";
+import AppointmentDetails from "./components/poc-view/AppointmentDetails";
+import AppointmentDetailsAdmin from "./components/AppointmentDetailsAdmin";
+import DepartmentList from "./components/DepartmentList";
+import UpdateSchedule from "./components/UpdateSchedule";
+import { EditGMeetLink } from "./components/poc-view/EditGMeetLink";
+import { EditConsultationFees } from "./components/poc-view/EditConsultationFees";
+import ViewUsers from "./components/ViewUsers";
+import TodaysAppointmentsAdmin from "./components/TodaysAppointmentsAdmin";
 const App = () => {
   return (
     <Router>
@@ -33,7 +41,7 @@ const App = () => {
           <Route path="/view-poc" element={<ViewPOC />} />
           
           {/* VIEW POC: Appointments for a POC */}
-          <Route path="/view-appointments/:pocId" element={<ViewAppointments />} /> 
+          <Route path="/view-appointments" element={<ViewAppointments />} /> 
 
           {/* Update availability */}
           <Route path="/update-availability" element={<UpdateAvailability />} />
@@ -64,8 +72,25 @@ const App = () => {
 
           <Route path="/add-poc" element={<AddPOC />} />
 
+          <Route path="/update-schedule" element={<UpdateSchedule />} />
+
           <Route path="/poc-user-profile" element={<UserProfile />} />
+
           <Route path="/doctors" element={<DoctorsList/>} />
+
+          <Route path="/appointment-details" element = {<AppointmentDetails />} />
+
+          <Route path="/appointment-details-admin" element={<AppointmentDetailsAdmin />} />  
+
+          <Route path="/departments" element={<DepartmentList />} />  
+
+          <Route path="/meet-link" element={<EditGMeetLink />} /> 
+
+          <Route path="/fees" element={<EditConsultationFees />} /> 
+
+          <Route path="/users" element={<ViewUsers />} /> 
+
+          <Route path="/admin-todays-appointments" element={<TodaysAppointmentsAdmin />} />;
 
         </Routes>
       </div>

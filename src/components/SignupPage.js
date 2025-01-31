@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './SignupPage.css';
+import './styles/SignupPage.css';
 
 const SignupPage = () => {
   const [clients, setClients] = useState([]); // To store client list

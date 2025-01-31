@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './UserProfile.css';
+import '../styles/UserProfile.css';
+import BackButtonPOC from './BackButtonPOC';
 
 const UserProfile = () => {
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const location = useLocation();
   const pocId = location.state.pocId;
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch doctor details
@@ -28,7 +30,12 @@ const UserProfile = () => {
     return <div>Loading...</div>; // Show loading spinner if doctor details aren't loaded
   }
 
+  const handleBackButton = () => {  
+    navigate("/back-button", { state: { pocId } });  
+   }; 
   return (
+    <>
+      <BackButtonPOC onClick={handleBackButton}/>
     <div className="user-profile">
       <div className="user-profile__container">
         {/* Doctor Profile Section */}
@@ -86,6 +93,7 @@ const UserProfile = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

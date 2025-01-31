@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import "./DoctorsList.css";
+import { useLocation, useNavigate } from "react-router-dom";
+import "./styles/DoctorsList.css";
+import BackButton from "./BackButton";
 
 const DoctorsList = () => {
   const location = useLocation();
   const clientId = location.state?.clientId || null;
+  const clientName = location.state.clientName || null;
 
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+   useEffect(() => {
+      // Set the background color when the component is mounted
+      document.body.style.backgroundColor = " #80bdff";
+  
+      // Cleanup when the component is unmounted or navigation happens
+      return () => {
+        document.body.style.backgroundColor = "";
+      };
+    }, []);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -48,10 +61,15 @@ const DoctorsList = () => {
 
   const groupedDoctors = groupByDepartment(doctors);
 
+  const handleBackButton = () => {  
+    navigate("/back-button", { state: { clientId, clientName } });  
+   }; 
+
   return (
-    <body className ="doctor-list-container">
+    <>
+      <BackButton onClick={handleBackButton}/>
         <div className="doctors-table-container">
-  <h1 className="doctors-table-heading">Doctors List</h1>
+  <h1 className="doctors-table-heading">{clientName} - Doctors List</h1>
   {loading ? (
     <p className="doctors-loading">Loading...</p>
   ) : error ? (
@@ -99,7 +117,7 @@ const DoctorsList = () => {
   )}
 </div>
 
-    </body>
+    </>
   );
 };
 

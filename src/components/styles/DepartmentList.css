@@ -1,0 +1,134 @@
+/* Base Styles for Department List */
+
+.department-list-container {
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #efeded;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+
+/* Headings */
+
+.department-list-heading {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+}
+
+
+/* Loading and Error Message */
+
+.department-list-loading,
+.department-list-error {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+}
+
+
+/* Table Container */
+
+.department-list-table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+    /* Enable horizontal scrolling for smaller screens */
+}
+
+.department-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.department-list-table th,
+.department-list-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #2b2a2a;
+}
+
+.department-list-table th {
+    background-color: #3f3e3e;
+    color: #ddd;
+}
+
+.department-list-table tr:nth-child(odd) {
+    background-color: #cac7c7;
+}
+
+.department-list-table tr:nth-child(even) {
+    background-color: #989595;
+}
+
+.department-list-table tr:hover {
+    background-color: #c8e0eb;
+}
+
+.department-list-table p {
+    text-align: center;
+    color: #666;
+}
+
+
+/* Responsive Design */
+
+
+/* Adjust for widths below 1000px */
+
+@media screen and (max-width: 1000px) {
+    .department-list-container {
+        padding: 15px;
+    }
+    .department-list-heading {
+        font-size: 1.3rem;
+    }
+    .department-list-table-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .department-list-table {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Adjust for widths below 768px */
+
+@media screen and (max-width: 768px) {
+    .department-list-heading {
+        font-size: 1.2rem;
+        text-align: left;
+    }
+    .department-list-table {
+        font-size: 0.8rem;
+    }
+    .department-list-button {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}
+
+
+/* Adjust for widths below 480px */
+
+@media screen and (max-width: 480px) {
+    .department-list-container {
+        padding: 10px;
+    }
+    .department-list-heading {
+        font-size: 1rem;
+    }
+    .department-list-table {
+        font-size: 0.7rem;
+    }
+    .department-list-button {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+}

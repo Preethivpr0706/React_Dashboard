@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';   
 import { useLocation, useNavigate } from 'react-router-dom';   
-import './CreatePasswordPage.css';     
+import './styles/CreatePasswordPage.css';     
   
 const CreatePasswordPage = () => {   
   const location = useLocation();   

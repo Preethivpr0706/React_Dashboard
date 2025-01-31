@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";  
 import { useNavigate, useLocation } from "react-router-dom";  
 import axios from "axios";  
-import "./AddAppointment.css";  
+import "./styles/AddAppointment.css";  
+import BackButton from './BackButton';  
   
 const AddNewAppointment = () => {  
   const [currentStep, setCurrentStep] = useState(1);  
@@ -25,6 +26,7 @@ const AddNewAppointment = () => {
   const navigate = useNavigate();  
   const location = useLocation();  
   const clientId = location.state.clientId; 
+  const clientName = location.state?.clientName || null;
   const [appointmentId, setAppointmentID] = useState(0);  
 
   useEffect(() => {
@@ -90,6 +92,7 @@ const AddNewAppointment = () => {
    });  
   };  
   
+  
   const handleDepartmentChange = (e) => {  
    const departmentId = e.target.value;  
    setAppointmentData({  
@@ -133,13 +136,22 @@ const AddNewAppointment = () => {
     .catch((error) => console.error("Error fetching available times:", error));  
   };  
   
-  const handleConfirm = () => {  
-   axios  
-    .post("/api/users", {  
-      name: appointmentData.name,  
-      phone: appointmentData.phone,  
-      email: appointmentData.email,  
-      location: appointmentData.location,  
+  const handleConfirm = () => { 
+    let phoneNumber = appointmentData.phone.replace(/\D/g, "");
+
+  if (!phoneNumber.startsWith("91")) {
+    if (phoneNumber.length === 10) {
+      phoneNumber = "91" + phoneNumber;
+    }
+  }
+
+  axios
+    .post("/api/users", {
+      name: appointmentData.name,
+      phone: phoneNumber,
+      email: appointmentData.email,
+      location: appointmentData.location,
+      clientId: clientId,
     })  
     .then((response) => {  
       const userId = response.data.userId;  
@@ -161,9 +173,12 @@ const AddNewAppointment = () => {
   };  
   
   const handleBackToDashboard = () => {  
-   navigate("/admin-dashboard", { state: { clientId } });  
+   navigate("/admin-dashboard", { state: { clientId,clientName } });  
   };  
   
+  const handleBackButton = () => {  
+    navigate("/back-button", { state: { clientId, clientName } });  
+   }; 
   const departmentName =  
    departments.find(  
     (d) => String(d.departmentId) === String(appointmentData.department)  
@@ -173,12 +188,13 @@ const AddNewAppointment = () => {
     ?.POC_Name || "N/A";  
   
     return (
+      <>
+      <BackButton onClick={handleBackButton}/>
         <div className="appointment-container">
           {/* Only show heading and step indicators if the appointment is not confirmed */}
           {!isConfirmed && (
             <>
               <h2>Add New Appointment</h2>
-    
               <div className="step-indicator">
                 <div className={`step ${currentStep >= 1 ? "active" : ""}`}>Step 1</div>
                 <div className={`step ${currentStep >= 2 ? "active" : ""}`}>Step 2</div>
@@ -209,7 +225,7 @@ const AddNewAppointment = () => {
                 type="text"
                 name="phone"
                 className="form-control"
-                placeholder="Enter Contact number"
+                placeholder="Enter Contact number (without country code, e.g., 976742101)"
                 value={appointmentData.phone}
                 onChange={handleInputChange}
               />
@@ -388,6 +404,7 @@ const AddNewAppointment = () => {
             )}
           </div>
         </div>
+        </>
     );
     
 };  

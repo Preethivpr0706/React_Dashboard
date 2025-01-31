@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from "react-router-dom";
-import './AvailabilityManager.css';
+import { useLocation, useNavigate } from "react-router-dom";
+import '../styles/AvailabilityManager.css';
+import BackButtonPOC from './BackButtonPOC';
 
 const AvailabilityManager = () => {
   const location = useLocation();
@@ -11,7 +12,7 @@ const AvailabilityManager = () => {
   const [selectedTimings, setSelectedTimings] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [message, setMessage] = useState('');
-
+const navigate = useNavigate();
   
   useEffect(() => {
     
@@ -88,7 +89,12 @@ const AvailabilityManager = () => {
       });
   };
 
+  const handleBackButton = () => {  
+    navigate("/back-button", { state: { pocId } });  
+   }; 
   return (
+    <>
+      <BackButtonPOC onClick={handleBackButton}/>
     <div className="availability-manager-page">
       <h1 className="availability-manager-heading">Manage Doctor's Availability</h1>
       <hr className="availability-manager-horizontal-line" />
@@ -191,6 +197,7 @@ const AvailabilityManager = () => {
         {message && <div className="availability-manager-message">{message}</div>}
       </form>
     </div>
+    </>
   );
 };
 

@@ -1,0 +1,144 @@
+/* Base Styles for Appointment Details */
+
+.appointment-details-container {
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #efeded;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+
+/* Headings */
+
+.appointment-details-heading {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+}
+
+
+/* Loading and Error Message */
+
+.appointment-details-loading,
+.appointment-details-error {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+}
+
+
+/* Table Container */
+
+.appointment-details-table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+    /* Enable horizontal scrolling for smaller screens */
+}
+
+.appointment-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.appointment-details-table th,
+.appointment-details-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #2b2a2a;
+}
+
+.appointment-details-table th {
+    background-color: #3f3e3e;
+    color: #ddd;
+}
+
+.appointment-details-table tr:nth-child(odd) {
+    background-color: #cac7c7;
+}
+
+.appointment-details-table tr:nth-child(even) {
+    background-color: #989595;
+}
+
+.appointment-details-table tr:hover {
+    background-color: #c8e0eb;
+}
+
+.appointment-details-table p {
+    text-align: center;
+    color: #666;
+}
+
+.appointment-details-table .payment-status-paid {
+    color: green;
+    font-weight: bold;
+}
+
+.appointment-details-table .payment-status-unpaid {
+    color: red;
+    font-weight: bold;
+}
+
+
+/* Responsive Design */
+
+
+/* Adjust for widths below 1000px */
+
+@media screen and (max-width: 1000px) {
+    .appointment-details-container {
+        padding: 15px;
+    }
+    .appointment-details-heading {
+        font-size: 1.3rem;
+    }
+    .appointment-details-table-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .appointment-details-table {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Adjust for widths below 768px */
+
+@media screen and (max-width: 768px) {
+    .appointment-details-heading {
+        font-size: 1.2rem;
+        text-align: left;
+    }
+    .appointment-details-table {
+        font-size: 0.8rem;
+    }
+    .appointment-details-button {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}
+
+
+/* Adjust for widths below 480px */
+
+@media screen and (max-width: 480px) {
+    .appointment-details-container {
+        padding: 10px;
+    }
+    .appointment-details-heading {
+        font-size: 1rem;
+    }
+    .appointment-details-table {
+        font-size: 0.7rem;
+    }
+    .appointment-details-button {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+}

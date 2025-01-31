@@ -125,6 +125,15 @@
     font-weight: 600;
 }
 
+.admin-dashboard .widget.card {
+    background-color: rgb(223, 227, 227);
+    cursor: pointer;
+}
+
+.admin-dashboard .widget.card:hover {
+    background-color: rgb(193, 196, 196);
+}
+
 
 /* Quick Actions */
 

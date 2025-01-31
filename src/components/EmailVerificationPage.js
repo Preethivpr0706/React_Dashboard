@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './EmailVerificationPage.css';
+import './styles/EmailVerificationPage.css';
 import _ from 'lodash';
 
 const EmailVerificationPage = () => {
