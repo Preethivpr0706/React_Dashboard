@@ -2,10 +2,10 @@ const mysql = require('mysql2');
 
 // Create a connection pool
 const pool = mysql.createPool({
-    host: 'localhost', // Replace with your database host
-    user: 'root', // Replace with your database user
-    password: 'password', // Replace with your database password
-    database: 'chatbotdynamic', // Replace with your database name
+    host: 'localhost',
+    user: 'meister',
+    password: 'Harishkumareact@123',
+    database: 'chatbotdynamic',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
