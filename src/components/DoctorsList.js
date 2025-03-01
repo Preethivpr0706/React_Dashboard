@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./styles/DoctorsList.css";
-import BackButton from "./BackButton";
 
 const DoctorsList = () => {
   const location = useLocation();
@@ -67,7 +66,7 @@ const DoctorsList = () => {
 
   return (
     <>
-      <BackButton onClick={handleBackButton}/>
+      {/* <BackButton onClick={handleBackButton}/> */}
         <div className="doctors-table-container">
   <h1 className="doctors-table-heading">{clientName} - Doctors List</h1>
   {loading ? (

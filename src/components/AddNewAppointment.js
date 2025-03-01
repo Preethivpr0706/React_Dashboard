@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";  
 import axios from "axios";  
 import "./styles/AddAppointment.css";  
-import BackButton from './BackButton';  
   
 const AddNewAppointment = () => {  
   const [currentStep, setCurrentStep] = useState(1);  
@@ -31,11 +30,11 @@ const AddNewAppointment = () => {
 
   useEffect(() => {
     // Set the background color when the component is mounted
-    document.body.style.backgroundColor = " #80bdff";
+    document.body.style.background = "linear-gradient(135deg, #6e8efb, #a777e3)";
 
     // Cleanup when the component is unmounted or navigation happens
     return () => {
-      document.body.style.backgroundColor = "";
+      document.body.style.background = "";
     };
   }, []);
 
@@ -189,7 +188,7 @@ const AddNewAppointment = () => {
   
     return (
       <>
-      <BackButton onClick={handleBackButton}/>
+      {/* <BackButton onClick={handleBackButton}/> */}
         <div className="appointment-container">
           {/* Only show heading and step indicators if the appointment is not confirmed */}
           {!isConfirmed && (

@@ -3,8 +3,8 @@ const mysql = require('mysql2');
 // Create a connection pool
 const pool = mysql.createPool({
     host: 'localhost',
-    user: 'meister',
-    password: 'Harishkumareact@123',
+    user: 'root',
+    password: 'password',
     database: 'chatbotdynamic',
     waitForConnections: true,
     connectionLimit: 10,

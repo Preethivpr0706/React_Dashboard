@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './styles/ViewUsers.css';
-import BackButton from './BackButton';  
+
 
 const ViewUsers = () => {
     const location = useLocation();
@@ -58,7 +58,7 @@ const ViewUsers = () => {
 
   return (
     <div className="users-wrapper">
-         <BackButton onClick={handleBackButton}/>
+         {/* <BackButton onClick={handleBackButton}/> */}
       <div className="view-users">
         <header className="header">
           <h1 className="header-title">{clientName} - User Details</h1>

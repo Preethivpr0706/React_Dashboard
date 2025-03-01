@@ -26,6 +26,8 @@ import { EditGMeetLink } from "./components/poc-view/EditGMeetLink";
 import { EditConsultationFees } from "./components/poc-view/EditConsultationFees";
 import ViewUsers from "./components/ViewUsers";
 import TodaysAppointmentsAdmin from "./components/TodaysAppointmentsAdmin";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsOfService from "./components/TermsOfService";
 const App = () => {
   return (
     <Router>
@@ -91,6 +93,10 @@ const App = () => {
           <Route path="/users" element={<ViewUsers />} /> 
 
           <Route path="/admin-todays-appointments" element={<TodaysAppointmentsAdmin />} />;
+
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />  
+
+          <Route path="/Terms-Of-Service" element={<TermsOfService/>}/>;
 
         </Routes>
       </div>

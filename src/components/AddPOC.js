@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";  
 import axios from "axios";  
 import { useNavigate, useLocation } from "react-router-dom";  
-import BackButton from "./BackButton"; 
 import "./styles/AddPOC.css";  
   
 export default function AddPOC() {  
@@ -102,13 +101,10 @@ export default function AddPOC() {
    }  
   };  
   
-  const handleBackToDashboard = () => {  
-   navigate("/admin-dashboard", { state: { clientId } });  
-  };  
   
   return (  
    <div className={`doctor-form-container`}>  
-    <header className="header bg-primary text-white p-3">  
+    <header className="header bg-purple text-white p-3">  
       <div className="container d-flex justify-content-between">  
        <h1>Doctor Management</h1>    
       </div>  
@@ -120,14 +116,14 @@ export default function AddPOC() {
         <div  
           key={step}  
           className={`step-circle ${  
-           currentStep >= step ? "bg-primary text-white" : "bg-light"  
+           currentStep >= step ? "bg-purple text-white" : "bg-light"  
           }`}  
         >  
           {step}  
         </div>  
        ))}  
             </div>  
-            <BackButton className="back-button"onClick={handleBackToDashboard} /> 
+        
 
       {currentStep === 1 && (  
        <div>  
@@ -222,7 +218,7 @@ export default function AddPOC() {
            />  
           </div>  
   
-          <button type="button" className="btn btn-primary" onClick={handleNext}>  
+          <button type="button" className="btn btn-next" onClick={handleNext}>  
            Next  
           </button>  
         </form>  

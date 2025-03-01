@@ -1,6 +1,8 @@
 .step-indicator {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .step-circle {
@@ -11,13 +13,60 @@
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    color: black
+    color: black;
 }
 
-.step-circle.bg-primary {
-    background-color: #007bff;
+.step-circle.bg-purple {
+    background-color: blueviolet;
+    /* Purple background */
+}
+
+.header.bg-purple {
+    background-color: blueviolet;
+    /* Purple header background */
+}
+
+.btn-next {
+    background-color: #9e17d3;
+}
+
+.btn-next:hover {
+    background-color: #630b8f;
+    ;
 }
 
 .doctor-form-container h5 {
     padding-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    .step-circle {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .step-indicator {
+        gap: 5px;
+    }
+    .step-circle {
+        width: 25px;
+        height: 25px;
+        font-size: 10px;
+    }
+    .header h1 {
+        font-size: 20px;
+    }
+    .form-control,
+    .form-select {
+        font-size: 14px;
+    }
+    button {
+        font-size: 14px;
+    }
 }

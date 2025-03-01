@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import axios from 'axios';  
 import './styles/UpdateAvailability.css'; 
-import BackButton from './BackButton';  
    
 const UpdateAvailability = () => {   
   const [departments, setDepartments] = useState([]);   
@@ -22,11 +21,11 @@ const UpdateAvailability = () => {
    
   useEffect(() => {
       // Set the background color when the component is mounted
-      document.body.style.backgroundColor = " #80bdff";
+      document.body.style.background = "linear-gradient(135deg, #6e8efb, #a777e3)";
   
       // Cleanup when the component is unmounted or navigation happens
       return () => {
-        document.body.style.backgroundColor = "";
+        document.body.style.background = "";
       };
     }, []);
     
@@ -126,13 +125,10 @@ const UpdateAvailability = () => {
     });   
   };  
    
-  const handleBackButton = () => {  
-    navigate("/back-button", { state: { clientId, clientName } });  
-   }; 
+ 
    
   return (   
-    <>
-      <BackButton onClick={handleBackButton}/>
+  
   <div className="admin-page">   
    <h1 className="heading">Update Doctor's Availability</h1>   
    <hr className="horizontal-line" />   
@@ -234,7 +230,7 @@ const UpdateAvailability = () => {
     {message && <div className="message">{message}</div>}   
    </form>   
   </div>  
-  </> 
+ 
   );   
 };   
    

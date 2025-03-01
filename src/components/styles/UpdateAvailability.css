@@ -90,13 +90,13 @@
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #007bff;
+    background-color: #9e17d3;
     color: #fff;
     cursor: pointer;
 }
 
 .admin-page .update-button:hover {
-    background-color: #0056b3;
+    background-color: #630b8f;
 }
 
 .admin-page .message {
@@ -135,4 +135,41 @@
 
 .admin-page .date-tile.partial {
     background-color: #ffd700;
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .admin-page {
+        width: 90%;
+        padding: 15px;
+    }
+    .admin-page .heading {
+        font-size: 20px;
+    }
+    .admin-page .select,
+    .admin-page .update-button {
+        height: 50px;
+    }
+    .admin-page .timings {
+        flex-direction: column;
+    }
+    .admin-page .timing {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-page .heading {
+        font-size: 18px;
+    }
+    .admin-page .form-group {
+        margin-bottom: 15px;
+    }
+    .admin-page .date-tile {
+        width: 100%;
+        text-align: center;
+    }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";  
 import { useLocation, useNavigate } from "react-router-dom";  
 import "./styles/AppointmentDetails.css";  
-import BackButtonAdmin from "./BackButton";  
+ 
   
 const AppointmentDetailsAdmin = () => {  
   const location = useLocation();  
@@ -47,13 +47,10 @@ const AppointmentDetailsAdmin = () => {
    fetchAppointments();  
   }, [clientId, status]);  
   
-  const handleBackButton = () => {  
-   navigate("/admin-dashboard", { state: { clientId } });  
-  };  
+  
   
   return (  
-   <>  
-    <BackButtonAdmin onClick={handleBackButton} />  
+    
     <div className="appointment-details-container">  
       <h1 className="appointment-details-heading">Appointment Details</h1>  
   
@@ -104,7 +101,7 @@ const AppointmentDetailsAdmin = () => {
        </div>  
       )}  
     </div>  
-   </>  
+   
   );  
 };  
   

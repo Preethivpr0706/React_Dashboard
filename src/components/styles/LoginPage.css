@@ -1,61 +1,186 @@
+/* Base container styles */
+
 .login-page {
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
     background-color: #6610f2;
-    padding: 4rem;
+    padding: 1rem;
 }
+
+
+/* Responsive padding for different screen sizes */
+
+@media (min-width: 640px) {
+    .login-page {
+        padding: 2rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .login-page {
+        padding: 4rem;
+    }
+}
+
+
+/* Form container styles */
 
 .login-form {
     background-color: #ffffff;
-    padding: 4rem;
+    padding: 1.5rem;
     border-radius: 1rem;
     width: 100%;
     max-width: 500px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+
+/* Responsive padding for form container */
+
+@media (min-width: 640px) {
+    .login-form {
+        padding: 2rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .login-form {
+        padding: 4rem;
+    }
+}
+
+
+/* Title styles */
+
 .login-page .login-title {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 2rem;
     color: #6610f2;
+    text-align: center;
 }
+
+
+/* Success message */
 
 .login-page .login-success {
     color: #34c759;
 }
 
+
+/* Form group spacing */
+
 .login-page .form-group {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
+
+@media (min-width: 640px) {
+    .login-page .form-group {
+        margin-bottom: 2rem;
+    }
+}
+
+
+/* Form labels */
 
 .login-page .form-label {
     display: block;
     margin-bottom: 0.5rem;
+    font-weight: 500;
 }
+
+
+/* Form controls */
 
 .login-page .form-control {
     width: 100%;
-    padding: 1rem;
+    padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
 }
 
+.login-page .form-control:focus {
+    outline: none;
+    border-color: #6610f2;
+    box-shadow: 0 0 0 2px rgba(102, 16, 242, 0.2);
+}
+
+
+/* Login button */
+
 .login-page .login-button {
+    width: 100%;
     background-color: #6610f2;
     color: #ffffff;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
 }
 
 .login-page .login-button:hover {
     background-color: #5b21b6;
 }
 
+
+/* Links styling */
+
+.login-page a {
+    color: #6610f2;
+    text-decoration: none;
+    transition: text-decoration 0.2s ease;
+}
+
+.login-page a:hover {
+    text-decoration: underline;
+}
+
+
+/* Error message */
+
 .login-page .login-error {
     color: #ff3737;
-    margin-top: 2rem;
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+
+/* Links container */
+
+.login-page p {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+}
+
+
+/* Select dropdown specific styles */
+
+.login-page select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+
+/* Responsive font sizes */
+
+@media (max-width: 480px) {
+    .login-page .login-title {
+        font-size: 2rem;
+    }
+    .login-page .form-control {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+    }
 }

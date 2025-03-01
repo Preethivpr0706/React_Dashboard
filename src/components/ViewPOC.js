@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";  
 import "./styles/ViewPOC.css";  
-import BackButton from './BackButton'; 
   
 const ViewPOC = () => {  
   const [departments, setDepartments] = useState([]);  
@@ -12,13 +11,13 @@ const ViewPOC = () => {
   const location = useLocation();  
   const clientId = location.state.clientId; 
   const clientName = location.state?.clientName || null; 
-  useEffect(() => {
+    useEffect(() => {
       // Set the background color when the component is mounted
-      document.body.style.backgroundColor = " #80bdff";
+      document.body.style.background = "linear-gradient(135deg, #6e8efb, #a777e3)";
   
       // Cleanup when the component is unmounted or navigation happens
       return () => {
-        document.body.style.backgroundColor = "";
+        document.body.style.background = "";
       };
     }, []);
   
@@ -53,13 +52,11 @@ const ViewPOC = () => {
   const handleViewAppointments = (pocId) => {  
    navigate(`/view-appointments/`, { state: { clientId,pocId } });  
   };  
-  const handleBackButton = () => {  
-    navigate("/back-button", { state: { clientId, clientName } });  
-   }; 
+  
 
   
   return (  
-    <><BackButton onClick={handleBackButton}/>
+   
    <div className="departments-pocs-container">  
     <h1>View POC Details</h1>  
   
@@ -124,7 +121,7 @@ const ViewPOC = () => {
       )}  
     </div>  
    </div> 
-   </> 
+  
   );  
 };  
   

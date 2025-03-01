@@ -4,29 +4,35 @@ import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/TodaysAppointments.css";
-import BackButton from "./BackButton";
+
 
 const TodaysAppointmentsAdmin = () => {
     const location = useLocation();
-    const clientId = location.state.clientId; 
+    const clientId = location.state.clientId;
     const clientName = location.state.clientName;
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [appointmentsPerPage] = useState(5); // Number of appointments per page
+
     useEffect(() => {
-        document.body.style.backgroundColor = " #80bdff";
-        return () => { document.body.style.backgroundColor = ""; };
+        document.body.style.backgroundColor = "#80bdff";
+        return () => {
+            document.body.style.backgroundColor = "";
+        };
     }, []);
 
     useEffect(() => {
         const fetchTodaysAppointments = async () => {
             try {
-                const response = await fetch("/api/admin/todays-appointments", {  // Change API path
+                const response = await fetch("/api/admin/todays-appointments", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ clientId }),  // Send clientId
+                    body: JSON.stringify({ clientId }),
                 });
 
                 if (response.ok) {
@@ -45,12 +51,20 @@ const TodaysAppointmentsAdmin = () => {
         fetchTodaysAppointments();
     }, [clientId]);
 
+    // Pagination logic
+    const indexOfLastAppointment = currentPage * appointmentsPerPage;
+    const indexOfFirstAppointment = indexOfLastAppointment - appointmentsPerPage;
+    const currentAppointments = appointments.slice(indexOfFirstAppointment, indexOfLastAppointment);
+
+    // Change page
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     const updateStatus = async (appointmentId, newStatus, previousStatus) => {
         const confirmUpdate = window.confirm(`Are you sure you want to mark this appointment as ${newStatus}?`);
         if (!confirmUpdate) return;
 
         try {
-            const response = await fetch("/api/admin/update-appointment-status", {  // Change API path
+            const response = await fetch("/api/admin/update-appointment-status", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ appointmentId, status: newStatus }),
@@ -68,8 +82,8 @@ const TodaysAppointmentsAdmin = () => {
                 const toastId = toast.success(
                     <div>
                         Appointment marked as <b>{newStatus}</b>.{" "}
-                        <button 
-                            style={{ background: "transparent", border: "none", color: "#007bff", cursor: "pointer" }} 
+                        <button
+                            style={{ background: "transparent", border: "none", color: "#007bff", cursor: "pointer" }}
                             onClick={() => undoUpdateStatus(appointmentId, previousStatus, toastId)}
                         >
                             Undo
@@ -101,7 +115,7 @@ const TodaysAppointmentsAdmin = () => {
 
     const undoUpdateStatus = async (appointmentId, previousStatus, toastId) => {
         try {
-            const response = await fetch("/api/admin/update-appointment-status", {  // Change API path
+            const response = await fetch("/api/admin/update-appointment-status", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ appointmentId, status: previousStatus }),
@@ -139,7 +153,7 @@ const TodaysAppointmentsAdmin = () => {
     return (
         <>
             <ToastContainer />
-            <BackButton onClick={() => navigate("/back-button", { state: { clientId, clientName } })} />
+            {/* <BackButton onClick={() => navigate("/back-button", { state: { clientId, clientName } })} /> */}
             <div className="todays-appointments-container">
                 <h1 className="todays-appointments-heading">Today's Appointments</h1>
 
@@ -148,57 +162,80 @@ const TodaysAppointmentsAdmin = () => {
                 ) : error ? (
                     <p className="todays-appointments-error">{error}</p>
                 ) : (
-                    <div className="todays-appointments-table-container">
-                        <table className="todays-appointments-table">
-                            <thead>
-                                <tr>
-                                    <th>S.No</th>
-                                    <th>Appointment Time</th>
-                                    <th>Appointment Type</th>
-                                    <th>Patient Name</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {appointments.length > 0 ? (
-                                    appointments.map((appt, index) => (
-                                        <tr key={appt.AppointmentId}>
-                                            <td>{index + 1}</td>
-                                            <td>{appt.AppointmentTime}</td>
-                                            <td>{appt.AppointmentType}</td>
-                                            <td>{appt.PatientName}</td>
-                                            <td>
-                                                {appt.Status === "Confirmed" && appt.Is_Active === 1 ? (
-                                                    <>
-                                                        <button 
-                                                            className="status-button visited" 
-                                                            onClick={() => updateStatus(appt.AppointmentId, "Availed", appt.Status)}
-                                                        >
-                                                            Mark as Visited
-                                                        </button>
-                                                        <button 
-                                                            className="status-button not-visited" 
-                                                            onClick={() => updateStatus(appt.AppointmentId, "Not_Availed", appt.Status)}
-                                                        >
-                                                            Mark as Not Visited
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <span className={`status-text ${appt.Status.toLowerCase().replace("_", "-")}`}>
-                                                        {appt.Status}
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
+                    <>
+                        <div className="todays-appointments-table-container">
+                            <table className="todays-appointments-table">
+                                <thead>
                                     <tr>
-                                        <td colSpan="5">No appointments found for today</td>
+                                        <th>S.No</th>
+                                        <th>Appointment Time</th>
+                                        <th>Appointment Type</th>
+                                        <th>Patient Name</th>
+                                        <th>Status</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {currentAppointments.length > 0 ? (
+                                        currentAppointments.map((appt, index) => (
+                                            <tr key={appt.AppointmentId}>
+                                                <td>{indexOfFirstAppointment + index + 1}</td>
+                                                <td>{appt.AppointmentTime}</td>
+                                                <td>{appt.AppointmentType}</td>
+                                                <td>{appt.PatientName}</td>
+                                                <td>
+                                                    {appt.Status === "Confirmed" && appt.Is_Active === 1 ? (
+                                                        <>
+                                                            <button
+                                                                className="status-button visited"
+                                                                onClick={() => updateStatus(appt.AppointmentId, "Availed", appt.Status)}
+                                                            >
+                                                                Mark as Visited
+                                                            </button>
+                                                            <button
+                                                                className="status-button not-visited"
+                                                                onClick={() => updateStatus(appt.AppointmentId, "Not_Availed", appt.Status)}
+                                                            >
+                                                                Mark as Not Visited
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <span className={`status-text ${appt.Status.toLowerCase().replace("_", "-")}`}>
+                                                            {appt.Status}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5">No appointments found for today</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Controls */}
+                        <div className="pagination-controls">
+                            <button
+                                onClick={() => paginate(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="pagination-button"
+                            >
+                                Previous
+                            </button>
+                            <span className="pagination-page-info">
+                                Page {currentPage} of {Math.ceil(appointments.length / appointmentsPerPage)}
+                            </span>
+                            <button
+                                onClick={() => paginate(currentPage + 1)}
+                                disabled={currentPage === Math.ceil(appointments.length / appointmentsPerPage)}
+                                className="pagination-button"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </>

@@ -15,15 +15,15 @@ const ViewAppointments = () => {
   const location = useLocation();
   const clientId = location.state.clientId || null;
   const pocId = location.state.pocId || null;
-useEffect(() => {
-      // Set the background color when the component is mounted
-      document.body.style.backgroundColor = " #80bdff";
-  
-      // Cleanup when the component is unmounted or navigation happens
-      return () => {
-        document.body.style.backgroundColor = "";
-      };
-    }, []);
+  useEffect(() => {
+    // Set the background color when the component is mounted
+    document.body.style.background = "linear-gradient(135deg, #6e8efb, #a777e3)";
+
+    // Cleanup when the component is unmounted or navigation happens
+    return () => {
+      document.body.style.background = "";
+    };
+  }, []);
   useEffect(() => {
     axios
       .post('/api/appointments', {  clientId: clientId, pocId:pocId })

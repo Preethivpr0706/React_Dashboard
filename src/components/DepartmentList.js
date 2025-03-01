@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";  
 import { useLocation, useNavigate } from "react-router-dom";  
 import "./styles/DepartmentList.css";  
-import BackButtonAdmin from "./BackButton";  
   
 const DepartmentList = () => {  
   const location = useLocation();  
@@ -45,14 +44,9 @@ const DepartmentList = () => {
   
    fetchDepartments();  
   }, [clientId]);  
-  
-  const handleBackButton = () => {  
-   navigate("/admin-dashboard", { state: { clientId } });  
-  };  
-  
+
   return (  
-   <>  
-    <BackButtonAdmin onClick={handleBackButton} />  
+
     <div className="department-list-container">  
       <h1 className="department-list-heading">Department List</h1>  
   
@@ -89,7 +83,7 @@ const DepartmentList = () => {
        </div>  
       )}  
     </div>  
-   </>  
+
   );  
 };  
   

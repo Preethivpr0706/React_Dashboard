@@ -29,12 +29,11 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    /* Add spacing for smaller layouts */
     margin-bottom: 20px;
 }
 
 .departments-pocs-container .dropdown-container label {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 }
 
 .departments-pocs-container .dropdown-container select {
@@ -52,13 +51,15 @@
 .departments-pocs-container .pocs-container {
     margin-top: 20px;
     overflow-x: auto;
-    /* Enable horizontal scrolling for smaller screens */
+    /* Enables horizontal scrolling for smaller screens */
 }
 
 .departments-pocs-container .pocs-container table {
     width: 100%;
     border-collapse: collapse;
     font-size: 1rem;
+    min-width: 600px;
+    /* Ensures proper column width on small screens */
 }
 
 .departments-pocs-container .pocs-container th,
@@ -75,16 +76,12 @@
     color: #ddd;
 }
 
-.departments-pocs-container .pocs-container tr:nth-child(odd) {
-    background-color: #cac7c7;
-}
-
-.departments-pocs-container .pocs-container tr:nth-child(even) {
-    background-color: #989595;
+.departments-pocs-container .pocs-container tr {
+    background-color: #fff;
 }
 
 .departments-pocs-container .pocs-container tr:hover {
-    background-color: #c8e0eb;
+    background-color: #bbb6f4;
 }
 
 .departments-pocs-container .pocs-container p {
@@ -96,7 +93,7 @@
 /* Button Styles */
 
 .departments-pocs-container button.view-appointments {
-    background-color: #008cba;
+    background-color: #9e17d3;
     color: white;
     padding: 10px 20px;
     border-radius: 4px;
@@ -105,10 +102,12 @@
     width: 100%;
     max-width: 200px;
     margin: 10px auto;
+    display: block;
+    text-align: center;
 }
 
 .departments-pocs-container button.view-appointments:hover {
-    background-color: #007b8a;
+    background-color: #630b8f;
     transform: scale(1.05);
 }
 
@@ -116,7 +115,7 @@
 /* Responsive Design */
 
 
-/* Adjust for widths below 1000px */
+/* Tablets and Small Laptops */
 
 @media screen and (max-width: 1000px) {
     .departments-pocs-container {
@@ -129,7 +128,6 @@
     .departments-pocs-container .dropdown-container {
         flex-direction: column;
         align-items: flex-start;
-        /* Align dropdowns to the left */
     }
     .departments-pocs-container .dropdown-container label {
         font-size: 1rem;
@@ -140,18 +138,16 @@
 }
 
 
-/* Adjust for widths below 768px */
+/* Mobile Devices */
 
 @media screen and (max-width: 768px) {
     .departments-pocs-container h1,
     .departments-pocs-container h2 {
         font-size: 1.2rem;
         text-align: left;
-        /* Align text for mobile readability */
     }
     .departments-pocs-container .dropdown-container select {
         max-width: 100%;
-        /* Full width for dropdown */
     }
     .departments-pocs-container .pocs-container table {
         font-size: 0.8rem;
@@ -163,7 +159,7 @@
 }
 
 
-/* Adjust for widths below 480px */
+/* Small Screens */
 
 @media screen and (max-width: 480px) {
     .departments-pocs-container {

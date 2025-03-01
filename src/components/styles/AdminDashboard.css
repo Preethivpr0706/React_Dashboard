@@ -2,6 +2,8 @@
 
 .admin-dashboard {
     font-family: Arial, sans-serif;
+    position: relative;
+    /* Allow absolute positioning of sidebar toggle button */
 }
 
 
@@ -13,12 +15,11 @@
     color: white;
     width: 250px;
     height: 100vh;
-    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
-    /* Ensure it's above other elements */
+    transition: transform 0.3s ease-in-out;
 }
 
 .admin-dashboard .sidebar.collapsed {
@@ -61,6 +62,31 @@
 }
 
 
+/* Sidebar Toggle Button (Hamburger Menu) */
+
+.admin-dashboard .sidebar-toggle-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    z-index: 1100;
+    /* Ensure it’s above the sidebar */
+    display: block;
+    /* Visible initially on mobile */
+}
+
+
+/* Move Sidebar Toggle Button inside the sidebar when open */
+
+.admin-dashboard .sidebar.open .sidebar-toggle-btn {
+    top: 15px;
+    right: 15px;
+    left: auto;
+}
+
+
 /* Main Content Styles */
 
 .admin-dashboard .main-content {
@@ -81,7 +107,6 @@
     background-color: #f8f9fa;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     z-index: 999;
-    /* Ensure it’s above sidebar */
 }
 
 .admin-dashboard header .btn-primary {
@@ -116,18 +141,32 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     padding: 20px;
     border-radius: 8px;
-    text-align: center;
+    text-align: left;
+    /* Ensuring text is left-aligned */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 250px;
+    /* Prevent shrinking */
+    width: auto;
 }
 
 .admin-dashboard .widget h4 {
     margin-bottom: 10px;
     font-size: 1.2rem;
     font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .admin-dashboard .widget.card {
     background-color: rgb(223, 227, 227);
     cursor: pointer;
+    min-width: 250px;
+    /* Prevent shrinking */
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .admin-dashboard .widget.card:hover {
@@ -168,10 +207,8 @@
 
 .admin-dashboard .sidebar ul li .link-button {
     background: none;
-    /* Keeps the sidebar button background clean */
     border: none;
     color: white;
-    /* Ensures text is white */
     text-align: left;
     width: 100%;
     padding: 10px 20px;
@@ -182,5 +219,82 @@
 
 .admin-dashboard .sidebar ul li .link-button:hover {
     background-color: rgba(255, 255, 255, 0.2);
-    /* Adds hover effect for sidebar buttons */
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .admin-dashboard .main-content {
+        margin-left: 0;
+    }
+    .admin-dashboard .widget {
+        width: 100%;
+    }
+    .admin-dashboard .sidebar {
+        width: 60px;
+        /* Narrow sidebar on small screens */
+    }
+    /* Hide text in collapsed sidebar on mobile */
+    .admin-dashboard .sidebar.collapsed ul li span {
+        display: none;
+        /* Hide the text */
+    }
+    .admin-dashboard .sidebar.collapsed {
+        width: 60px;
+        /* Adjust the width of the sidebar */
+    }
+    .admin-dashboard .sidebar.collapsed ul li {
+        text-align: center;
+        padding: 12px;
+    }
+    /* Make the sidebar toggle button visible on small screens */
+    .admin-dashboard .sidebar-toggle-btn {
+        display: block;
+        /* Show the button on mobile */
+    }
+    /* Sidebar Toggle Button Inside Sidebar on Mobile */
+    .admin-dashboard .sidebar.open .sidebar-toggle-btn {
+        top: 15px;
+        right: 15px;
+        left: auto;
+    }
+}
+
+
+/* Pagination Controls */
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.pagination-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #1a73e8;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.pagination-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background-color: #1557b0;
+}
+
+.pagination-page-info {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
 }
