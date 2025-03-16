@@ -1,0 +1,490 @@
+/* ViewUsers.css with increased specificity */
+
+/* Base styles with increased specificity */
+html body .app__users-wrapper {
+    padding-top: 50px;
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    color: #2c3e50;
+    background-color: #f0f7ff;
+    min-height: 100vh;
+  }
+  
+  html body .app__view-users {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 2.5rem;
+    background-color: #ffffff;
+    color: #333333;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+  
+  /* Header styles */
+  html body .app__users-wrapper .app__users-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeaea;
+    position: relative;
+  }
+  
+  html body .app__users-wrapper .app__users-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(to right, #3498db, #2980b9);
+    border-radius: 3px;
+  }
+  
+  html body .app__users-wrapper .app__header-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #3498db;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+  
+  /* Search container styles */
+  html body .app__users-wrapper .app__search-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+  
+  html body .app__users-wrapper .app__search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    flex-grow: 1;
+  }
+  
+  html body .app__users-wrapper .app__section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+  }
+  
+  html body .app__users-wrapper .app__search-input-wrapper {
+    position: relative;
+    flex-grow: 1;
+    max-width: 500px;
+  }
+  
+  html body .app__users-wrapper .app__search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+    font-size: 1.25rem;
+  }
+  
+  html body .app__users-wrapper .app__search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    color: #333333;
+    background-color: #ffffff;
+    transition: all 0.3s ease;
+  }
+  
+  html body .app__users-wrapper .app__search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+  
+  html body .app__users-wrapper .app__clear-search {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  html body .app__users-wrapper .app__clear-search:hover {
+    color: #e74c3c;
+  }
+  
+  html body .app__users-wrapper .app__users-count {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  
+  html body .app__users-wrapper .app__count-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #3498db;
+    color: white;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  /* Table styles */
+  html body .app__users-wrapper .app__table-container {
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    margin-bottom: 2rem;
+    background-color: #ffffff;
+    border: 1px solid #eaeaea;
+  }
+  
+  html body .app__users-wrapper .app__users-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+  }
+  
+  html body .app__users-wrapper .app__table-head {
+    background-color: #f8f9fa;
+  }
+  
+  html body .app__users-wrapper .app__table-header {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    border-bottom: 2px solid #eaeaea;
+    font-weight: 600;
+    color: #4a5568;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+  }
+  
+  html body .app__users-wrapper .app__table-header:first-child {
+    border-top-left-radius: 0.75rem;
+  }
+  
+  html body .app__users-wrapper .app__table-header:last-child {
+    border-top-right-radius: 0.75rem;
+  }
+  
+  html body .app__users-wrapper .app__table-body .app__table-row {
+    transition: background-color 0.2s ease;
+  }
+  
+  html body .app__users-wrapper .app__table-body .app__table-row:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  
+  html body .app__users-wrapper .app__table-body .app__table-row:hover {
+    background-color: #e3f2fd;
+  }
+  
+  html body .app__users-wrapper .app__table-cell {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #eaeaea;
+    color: #4a5568;
+  }
+  
+  html body .app__users-wrapper .app__user-name {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  html body .app__users-wrapper .app__user-email {
+    color: #3498db;
+  }
+  
+  /* Loading state */
+  html body .app__users-wrapper .app__loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+  
+  html body .app__users-wrapper .app__loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  html body .app__users-wrapper .app__loading-text {
+    color: #7f8c8d;
+    font-size: 1.125rem;
+  }
+  
+  /* Error state */
+  html body .app__users-wrapper .app__error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+  
+  html body .app__users-wrapper .app__error-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: #ffebee;
+    color: #e74c3c;
+    border-radius: 50%;
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+  }
+  
+  html body .app__users-wrapper .app__error-message {
+    color: #e74c3c;
+    font-size: 1.125rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  html body .app__users-wrapper .app__retry-button {
+    padding: 0.75rem 2rem;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  html body .app__users-wrapper .app__retry-button:hover {
+    background-color: #c0392b;
+  }
+  
+  /* Empty state */
+  html body .app__users-wrapper .app__empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0;
+    background-color: #f9f9f9;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  
+  html body .app__users-wrapper .app__empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: #bdc3c7;
+  }
+  
+  html body .app__users-wrapper .app__empty-message {
+    color: #7f8c8d;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  html body .app__users-wrapper .app__clear-button {
+    padding: 0.75rem 2rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  html body .app__users-wrapper .app__clear-button:hover {
+    background-color: #2980b9;
+  }
+  
+  /* Pagination styles */
+  html body .app__users-wrapper .app__pagination-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  html body .app__users-wrapper .app__pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  html body .app__users-wrapper .app__pagination-btn {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: white;
+    color: #4a5568;
+    transition: all 0.2s ease;
+  }
+  
+  html body .app__users-wrapper .app__pagination-btn:hover:not(:disabled) {
+    background-color: #f1f9ff;
+    border-color: #3498db;
+    color: #3498db;
+  }
+  
+  html body .app__users-wrapper .app__pagination-active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+    font-weight: 600;
+  }
+  
+  html body .app__users-wrapper .app__pagination-active:hover {
+    background-color: #2980b9 !important;
+    color: white !important;
+  }
+  
+  html body .app__users-wrapper .app__pagination-btn:disabled {
+    background-color: #f5f5f5;
+    color: #bdc3c7;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  html body .app__users-wrapper .app__pagination-nav {
+    font-weight: bold;
+  }
+  
+  html body .app__users-wrapper .app__pagination-info {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+  }
+  
+  /* Footer actions */
+  html body .app__users-wrapper .app__footer-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+  }
+  
+  html body .app__users-wrapper .app__back-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #ecf0f1;
+    color: #34495e;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  html body .app__users-wrapper .app__back-button:hover {
+    background-color: #dfe6e9;
+    transform: translateX(-3px);
+  }
+  
+  /* Responsive styles */
+  @media screen and (max-width: 991px) {
+    html body .app__users-wrapper .app__view-users {
+      padding: 2rem;
+    }
+    
+    html body .app__users-wrapper .app__header-title {
+      font-size: 2rem;
+    }
+    
+    html body .app__users-wrapper .app__search-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      width: 100%;
+    }
+    
+    html body .app__users-wrapper .app__search-input-wrapper {
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+  
+  @media screen and (max-width: 767px) {
+    html body .app__users-wrapper .app__view-users {
+      padding: 1.5rem;
+    }
+    
+    html body .app__users-wrapper .app__header-title {
+      font-size: 1.75rem;
+    }
+    
+    html body .app__users-wrapper .app__search-container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    html body .app__users-wrapper .app__users-count {
+      margin-top: 0.5rem;
+      justify-content: flex-start;
+    }
+    
+    html body .app__users-wrapper .app__pagination-wrapper {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    html body .app__users-wrapper .app__pagination {
+      order: 1;
+    }
+    
+    html body .app__users-wrapper .app__pagination-info {
+      order: 0;
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  @media screen and (max-width: 479px) {
+    html body .app__users-wrapper .app__header-title {
+      font-size: 1.5rem;
+    }
+    
+    html body .app__users-wrapper .app__section-title {
+      font-size: 1.25rem;
+    }
+    
+    html body .app__users-wrapper .app__pagination-btn {
+      min-width: 2rem;
+      height: 2rem;
+      font-size: 0.875rem;
+    }
+  }

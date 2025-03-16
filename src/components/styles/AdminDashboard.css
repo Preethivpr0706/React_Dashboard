@@ -1,0 +1,451 @@
+/* Admin Dashboard - Base Styles
+---------------------------------------- */
+.admin-dashboard {
+    display: flex;
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f4f8;
+    min-height: 100vh;
+  }
+  
+  /* Sidebar Styles
+  ---------------------------------------- */
+  .admin-dashboard__sidebar {
+    width: 250px;
+    background: linear-gradient(to bottom, #2c3e50, #1a252f);
+    color: #fff;
+    height: 100vh;
+    position: fixed;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+  }
+  
+  .admin-dashboard__sidebar--collapsed {
+    transform: translateX(-250px);
+  }
+  
+  .admin-dashboard__sidebar--open {
+    transform: translateX(0);
+  }
+  
+  .admin-dashboard__sidebar-header {
+    padding: 20px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+  }
+  
+  .admin-dashboard__sidebar-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  .admin-dashboard__sidebar-subtitle {
+    margin: 5px 0 0;
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  
+  .admin-dashboard__sidebar-menu {
+    padding: 15px 0;
+  }
+  
+  .admin-dashboard__sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .admin-dashboard__sidebar-item:hover, 
+  .admin-dashboard__sidebar-item--active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  .admin-dashboard__sidebar-icon {
+    margin-right: 15px;
+    font-size: 16px;
+    width: 20px;
+    display: inline-block;
+  }
+  
+  .admin-dashboard__sidebar-text {
+    font-size: 14px;
+  }
+  
+  /* Main Content Styles
+  ---------------------------------------- */
+  .admin-dashboard__main-content {
+    flex: 1;
+    margin-left: 250px;
+    transition: all 0.3s ease;
+  }
+  
+  .admin-dashboard__main-content--expanded {
+    margin-left: 0;
+  }
+  
+  /* Header Styles
+  ---------------------------------------- */
+  .admin-dashboard__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .admin-dashboard__header-left {
+    display: flex;
+    align-items: center;
+  }
+  
+  .admin-dashboard__toggle-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #2c3e50;
+    cursor: pointer;
+    margin-right: 20px;
+    padding: 5px;
+  }
+  
+  .admin-dashboard__header-title {
+    margin: 0;
+    font-size: 22px;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__header-right {
+    display: flex;
+    align-items: center;
+  }
+  
+  /* User Dropdown Styles
+  ---------------------------------------- */
+  .admin-dashboard__dropdown-container {
+    position: relative;
+  }
+  
+  .admin-dashboard__user-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .admin-dashboard__user-profile:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .admin-dashboard__user-icon {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-right: 10px;
+  }
+  
+  .admin-dashboard__username {
+    font-size: 14px;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    margin-top: 10px;
+    min-width: 160px;
+    z-index: 1000;
+  }
+  
+  .admin-dashboard__dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: #333;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .admin-dashboard__dropdown-item:hover {
+    background-color: #f5f5f5;
+  }
+  
+  /* Dashboard Content Styles
+  ---------------------------------------- */
+  .admin-dashboard__content {
+    padding: 25px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .admin-dashboard__welcome-section {
+    margin-bottom: 30px;
+  }
+  
+  .admin-dashboard__welcome-title {
+    margin: 0;
+    font-size: 24px;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__welcome-subtitle {
+    margin: 5px 0 0;
+    color: #7f8c8d;
+  }
+  
+  /* Stats Cards Styles
+  ---------------------------------------- */
+  .admin-dashboard__stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .admin-dashboard__stats-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .admin-dashboard__stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-dashboard__stats-icon {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+  }
+  
+  .admin-dashboard__stats-icon--appointments {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+  }
+  
+  .admin-dashboard__stats-icon--departments {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+  }
+  
+  .admin-dashboard__stats-icon--doctors {
+    background-color: rgba(155, 89, 182, 0.1);
+    color: #9b59b6;
+  }
+  
+  .admin-dashboard__stats-icon--cancelled {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+  }
+  
+  .admin-dashboard__stats-info {
+    flex: 1;
+  }
+  
+  .admin-dashboard__stats-value {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__stats-label {
+    margin: 5px 0 0;
+    color: #7f8c8d;
+    font-size: 14px;
+  }
+  
+  /* Action Cards Styles
+  ---------------------------------------- */
+  .admin-dashboard__actions-section {
+    margin-bottom: 30px;
+  }
+  
+  .admin-dashboard__section-title {
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .admin-dashboard__action-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .admin-dashboard__action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-dashboard__action-icon {
+    font-size: 20px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+  }
+  
+  .admin-dashboard__action-icon--appointments {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+  }
+  
+  .admin-dashboard__action-icon--poc {
+    background-color: rgba(155, 89, 182, 0.1);
+    color: #9b59b6;
+  }
+  
+  .admin-dashboard__action-icon--view {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+  }
+  
+  .admin-dashboard__action-icon--schedule {
+    background-color: rgba(241, 196, 15, 0.1);
+    color: #f1c40f;
+  }
+  
+  .admin-dashboard__action-text {
+    flex: 1;
+  }
+  
+  .admin-dashboard__action-title {
+    margin: 0;
+    font-size: 16px;
+    color: #2c3e50;
+  }
+  
+  .admin-dashboard__action-description {
+    margin: 5px 0 0;
+    color: #7f8c8d;
+    font-size: 14px;
+  }
+  
+  /* Support Section Styles
+  ---------------------------------------- */
+  .admin-dashboard__support-section {
+    margin-top: 30px;
+  }
+  
+  .admin-dashboard__support-card {
+    background: linear-gradient(to right, #3498db, #2980b9);
+    border-radius: 8px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+  }
+  
+  .admin-dashboard__support-icon {
+    font-size: 30px;
+    margin-right: 20px;
+  }
+  
+  .admin-dashboard__support-text {
+    flex: 1;
+  }
+  
+  .admin-dashboard__support-title {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .admin-dashboard__support-description {
+    margin: 5px 0 15px;
+    opacity: 0.8;
+  }
+  
+  .admin-dashboard__support-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .admin-dashboard__support-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Responsive Design
+  ---------------------------------------- */
+  @media (max-width: 768px) {
+    .admin-dashboard__sidebar {
+      width: 250px;
+    }
+    
+    .admin-dashboard__sidebar--collapsed {
+      transform: translateX(-250px);
+    }
+    
+    .admin-dashboard__main-content {
+      margin-left: 0;
+    }
+    
+    .admin-dashboard__stats-container, 
+    .admin-dashboard__action-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Animation Keyframes
+  ---------------------------------------- */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .admin-dashboard__dropdown-menu {
+    animation: fadeIn 0.2s ease;
+  }

@@ -1,0 +1,177 @@
+/* Modern and Professional Styling for Doctors List */
+
+:root {
+    --primary-color: #4caf50;
+    --secondary-color: #388e3c;
+    --background-color: #f0f4f8;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --accent-color: #66bb6a;
+    --border-color: #e0e0e0;
+  }
+  
+  .doctors-page {
+    background-color: var(--background-color);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+  }
+  
+  .doctors-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .doctors-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    border-bottom: 2px solid var(--border-color);
+    background-color: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+  
+  .doctors-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .back-button {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .back-button:hover {
+    background-color: var(--accent-color);
+  }
+  
+  .search-container {
+    padding: 1.5rem 2rem;
+    background-color: var(--card-background);
+    border-bottom: 2px solid var(--border-color);
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.3s ease;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+  }
+  
+  .table-responsive {
+    padding: 2rem;
+  }
+  
+  .department-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .department-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+  }
+  
+  .department-count {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+  }
+  
+  .doctors-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+  
+  .doctors-table th, .doctors-table td {
+    padding: 1.25rem;
+    text-align: left;
+  }
+  
+  .doctors-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 700;
+  }
+  
+  .doctors-table td {
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .doctors-table tr:hover {
+    background-color: var(--background-color);
+  }
+  
+  @media screen and (max-width: 768px) {
+    .doctors-header, .search-container, .table-responsive {
+      padding: 1rem;
+    }
+  
+    .doctors-title {
+      font-size: 1.75rem;
+    }
+  
+    .doctors-table th, .doctors-table td {
+      padding: 1rem;
+    }
+  }
+  
+  @media screen and (max-width: 576px) {
+    .doctors-header {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .doctors-title {
+      font-size: 1.5rem;
+    }
+  
+    .search-input {
+      font-size: 0.9rem;
+    }
+  
+    .doctors-table {
+      font-size: 0.9rem;
+    }
+  
+    .doctors-table th:nth-child(3), .doctors-table td:nth-child(3) {
+      display: none;
+    }
+  }
+  

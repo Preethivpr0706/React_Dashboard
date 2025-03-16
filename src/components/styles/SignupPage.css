@@ -1,0 +1,69 @@
+.sign-up-page {
+    height: 100vh;
+    background-color: #6610f2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+}
+
+.sign-up-card {
+    background-color: #ffffff;
+    padding: 4rem;
+    border-radius: 1rem;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.sign-up-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    color: #6610f2;
+}
+
+.sign-up-page .form-group {
+    margin-bottom: 2rem;
+}
+
+.sign-up-page .form-label {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    color: black
+}
+
+.sign-up-page .form-control {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+}
+
+.sign-up-page .btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #6610f2;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.sign-up-page .btn:hover {
+    background-color: #5b21b6;
+}
+
+.sign-up-page .text-success {
+    color: #34c759;
+    font-size: 1rem;
+    margin-top: 2rem;
+}
+
+.sign-up-page .btn[disabled] {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
