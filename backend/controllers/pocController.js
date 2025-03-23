@@ -4,6 +4,79 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 
+const jwt = require('jsonwebtoken');
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Explicitly set the path to the .env file in the project root
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Login Function
+async function matchLoginCredentials(req, res) {
+    const { email, password, role, clientId } = req.body;
+
+    try {
+        if (role === 'admin') {
+            // Check admin credentials
+            const [admin] = await pool.execute(
+                "SELECT * FROM client WHERE Admin_Email = ? AND Admin_Password = ? AND Client_ID = ?", [email, password, clientId]
+            );
+
+            if (admin.length === 0) {
+                return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+            }
+
+            const token = jwt.sign({ clientId, role }, process.env.SECRET_KEY, { expiresIn: '1h' });
+
+            // In matchLoginCredentials function
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // Only use secure in production
+                sameSite: 'Lax' // Use 'Lax' in development, 'Strict' in production
+            });
+
+            return res.json({ success: true, message: 'Login successful!', clientId, clientName: admin[0].Client_Name });
+        }
+
+        // Check POC credentials
+        const [rows] = await pool.execute('SELECT POC_ID, Password FROM poc WHERE Email = ?', [email]);
+
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        }
+
+        const pocId = rows[0].POC_ID;
+        const hashedPassword = rows[0].Password;
+
+        // Compare the provided password with the hashed password
+        const isValidPassword = await bcrypt.compare(password, hashedPassword);
+
+        if (!isValidPassword) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        }
+
+        const token = jwt.sign({ pocId, role }, process.env.SECRET_KEY, { expiresIn: '1h' });
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict'
+        });
+
+        return res.json({ success: true, message: 'Login successful!', pocId });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Failed to login.' });
+    }
+}
+
+// Logout Function
+function logout(req, res) {
+    res.clearCookie('token');
+    return res.json({ success: true, message: 'Logged out successfully!' });
+}
+
+
 async function getClients(req, res) {
     try {
         // Fetch clients from the database
@@ -14,7 +87,6 @@ async function getClients(req, res) {
         res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 }
-
 
 async function verifyPOCEmail(req, res) {
     const { clientId, email } = req.body;
@@ -40,14 +112,12 @@ async function verifyPOCEmail(req, res) {
         await pool.execute('INSERT INTO verification_tokens (email, token) VALUES (?, ?)', [email, token]);
 
         // Send email using nodemailer    
-        // Looking to send emails in production? Check out our Email API/SMTP product!
         const transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 2525,
+            service: 'Gmail',
             auth: {
-                user: "9666ab58f7f087",
-                pass: "2e78631aec59ce"
-            }
+                user: 'preethivpr0706@gmail.com',
+                pass: 'rgtpjumiiztkbktn', // App password    
+            },
         });
 
         const verificationLink = `http://localhost:3000/verify-email/${token}/${pocId}`;
@@ -124,55 +194,6 @@ async function updatePassword(req, res) {
 };
 
 
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const dotenv = require('dotenv');
-
-// Explicitly set the path to the .env file in the project root
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-async function matchLoginCredentials(req, res) {
-    const { email, password, role, clientId } = req.body;
-
-    try {
-        if (role === 'admin') {
-            // Check admin credentials
-            const [admin] = await pool.execute(
-                "SELECT * FROM client WHERE Admin_Email = ? AND Admin_Password = ? AND Client_ID = ?", [email, password, clientId]
-            );
-
-            if (admin.length === 0) {
-                return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-            }
-
-            const token = jwt.sign({ clientId, role }, process.env.SECRET_KEY, { expiresIn: '1h' });
-            return res.json({ success: true, message: 'Login successful!', token, clientId, clientName: admin[0].Client_Name });
-        }
-
-        // Check POC credentials
-        const [rows] = await pool.execute('SELECT POC_ID, Password FROM poc WHERE Email = ?', [email]);
-
-        if (rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-        }
-
-        const pocId = rows[0].POC_ID;
-        const hashedPassword = rows[0].Password;
-
-        // Compare the provided password with the hashed password
-        const isValidPassword = await bcrypt.compare(password, hashedPassword);
-
-        if (!isValidPassword) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-        }
-
-        const token = jwt.sign({ pocId, role }, process.env.SECRET_KEY, { expiresIn: '1h' });
-        return res.json({ success: true, message: 'Login successful!', token, pocId });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Failed to login.' });
-    }
-}
 
 async function requestPasswordReset(req, res) {
     const { email } = req.body;
@@ -190,15 +211,14 @@ async function requestPasswordReset(req, res) {
         await pool.execute('INSERT INTO verification_tokens (email, token) VALUES (?, ?)', [email, token]);
 
         // Send email
-        // Looking to send emails in production? Check out our Email API/SMTP product!
         const transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 2525,
+            service: 'Gmail',
             auth: {
-                user: "9666ab58f7f087",
-                pass: "2e78631aec59ce"
-            }
+                user: 'preethivpr0706@gmail.com',
+                pass: 'rgtpjumiiztkbktn',
+            },
         });
+
         const resetLink = `http://localhost:3000/reset-password/${token}/${pocId}`;
 
         await transporter.sendMail({
@@ -441,25 +461,26 @@ const getAvailableTimes = async(req, res) => {
 
 
 //Create appointment  
+// Modified createAppointment function to include payment status
 const createAppointment = async(req, res) => {
-    const { userId, pocId, date, time, type } = req.body;
+    const { userId, pocId, date, time, type, paymentStatus } = req.body;
     const clientId = req.body.clientId;
     console.log(req.body);
 
     try {
-        // Insert the new appointment  
+        // Insert the new appointment with payment status  
         const [result] = await pool.execute(
-            "INSERT INTO Appointments (Client_ID, User_ID, POC_ID, Appointment_Date, Appointment_Time, Appointment_Type, Status, Is_Active) VALUES (?, ?, ?, ?, ?, ?, 'Confirmed', true)", [clientId, userId, pocId, date, time, type]
+            "INSERT INTO Appointments (Client_ID, User_ID, POC_ID, Appointment_Date, Appointment_Time, Appointment_Type, Status, Is_Active, Payment_Status) VALUES (?, ?, ?, ?, ?, ?, 'Confirmed', true, ?)", [clientId, userId, pocId, date, time, type, paymentStatus || 'Pay_later']
         );
 
         console.log("Appointment created with ID:", result.insertId);
 
         // Update available slots
         const updateQuery = `
-     UPDATE POC_Available_Slots
-     SET appointments_per_slot = appointments_per_slot - 1
-     WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ? AND appointments_per_slot > 0;
-  `;
+            UPDATE POC_Available_Slots
+            SET appointments_per_slot = appointments_per_slot - 1
+            WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ? AND appointments_per_slot > 0;
+        `;
         const [updateResult] = await pool.execute(updateQuery, [pocId, date, time]);
 
         if (updateResult.affectedRows === 0) {
@@ -473,6 +494,7 @@ const createAppointment = async(req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 const updateFullAvailability = async(req, res) => {
     const { pocId, date } = req.body;
     console.log(req.body);
@@ -1262,4 +1284,5 @@ module.exports = {
     adminAppointmentDetails,
     updateProfileImage,
     fetchPOCImage,
+    logout
 };

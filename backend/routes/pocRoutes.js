@@ -59,11 +59,11 @@ router.post('/pocs/available-times-update', authMiddleware, getAvailableTimesFor
 router.post('/pocs/available-dates-update', authMiddleware, getAvailableDatesForUpdate);
 router.post('/pocs/update-full', authMiddleware, updateFullAvailability);
 router.post('/pocs/update-partial', authMiddleware, updatePartialAvailability);
-router.post('/verify-poc-email', authMiddleware, verifyPOCEmail);
-router.post('/verify-email', authMiddleware, verifyEmail);
-router.post('/update-password', authMiddleware, updatePassword);
-router.post('/request-password-reset', authMiddleware, requestPasswordReset);
-router.post('/reset-password', authMiddleware, resetPassword);
+// router.post('/verify-poc-email', authMiddleware, verifyPOCEmail);
+// router.post('/verify-email', authMiddleware, verifyEmail);
+// router.post('/update-password', authMiddleware, updatePassword);
+// router.post('/request-password-reset', authMiddleware, requestPasswordReset);
+// router.post('/reset-password', authMiddleware, resetPassword);
 router.post('/getClientId', authMiddleware, getClientFromPOC);
 router.post('/poc/appointment-count', authMiddleware, pocAppointmentCount);
 router.post('/poc/typeAppointment', authMiddleware, pocTypeAppointments);
