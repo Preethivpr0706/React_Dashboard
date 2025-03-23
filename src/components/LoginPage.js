@@ -13,79 +13,54 @@ const LoginPage = () => {
   const [error, setError] = useState("");    
   const navigate = useNavigate();    
     
-  const handleLogin = async () => {    
-    try {    
-      const response = await fetch('http://localhost:5000/api/poc-login', {    
-        method: 'POST',    
-        headers: { 'Content-Type': 'application/json' },    
-        body: JSON.stringify({ email, password, role, clientId }),    
-      });    
-      
-      const result = await response.json();    
-      
-      if (result.success) {  
-        // Explicitly store token with prefix for backend auth middleware
-        localStorage.setItem('token', `Bearer ${result.token}`);
-        console.log('Token stored:', localStorage.getItem('token'));  
-        if (role === 'admin') {    
-          navigate("/admin-dashboard", { state: { clientId, clientName } });    
-        } else {    
-          const pocId = result.pocId;
-          navigate("/poc-dashboard/", { state: { pocId } });    
-        }    
-      } else {    
-        setError(result.message);    
-      }    
-    } catch (error) {    
-      console.error(error);    
-      setError('Failed to login. Please try again.');    
-    }    
-  };    
-    
-  const fetchClients = async () => {    
-    try {    
-      const response = await fetch('http://localhost:5000/api/clients', {    
-        method: 'POST',    
-        headers: { 'Content-Type': 'application/json' },    
-        body: JSON.stringify({}),    
-      });    
-      const data = await response.json();    
-      setClients(data);    
-    } catch (error) {    
-      console.error(error);    
-      setError('Failed to fetch clients. Please refresh and try again.');
-    }    
-  };    
-    
-  useEffect(() => { 
-    // Check if already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Attempt to redirect based on role stored in token
-      try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          if (payload.role === 'admin') {
-            navigate("/admin-dashboard", { 
-              state: { 
-                clientId: payload.clientId, 
-                clientName: payload.clientName 
-              } 
-            });
-          } else {
-            navigate("/poc-dashboard");
-          }
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/poc-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include cookies in the request
+        body: JSON.stringify({ email, password, role, clientId }),
+      });
+
+      const result = await response.json();
+      console.log(result);
+
+      if (result.success) {
+        if (role === "admin") {
+          navigate("/admin-dashboard", { state: { clientId, clientName } });
+        } else {
+          navigate("/poc-dashboard", {state: { pocId: result.pocId}});
         }
-      } catch (error) {
-        console.error('Token parsing error:', error);
-        localStorage.removeItem('token');
+      } else {
+        setError(result.message);
       }
-    }   
-    if (role === 'admin') {    
-      fetchClients();    
-    }    
-  }, [role]);    
+    } catch (error) {
+      console.error(error);
+      setError("Failed to login. Please try again.");
+    }
+  };
+  
+    
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/clients", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        const data = await response.json();
+        setClients(data);
+      } catch (error) {
+        console.error(error);
+        setError("Failed to fetch clients. Please refresh and try again.");
+      }
+    };
+
+    if (role === "admin") {
+      fetchClients();
+    }
+  }, [role]);  
     
   return (    
     <div className="login-page">    

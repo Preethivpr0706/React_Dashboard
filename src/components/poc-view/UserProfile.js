@@ -12,49 +12,115 @@ const UserProfile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // State for protected data
+  const [pocId, setPocId] = useState(null);
+  const [clientId, setClientId] = useState(null);
+  const [pocName, setPocName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stateLoaded, setStateLoaded] = useState(false);
+  
   const location = useLocation();
-  const pocId = location.state?.pocId;
   const navigate = useNavigate();
   const axiosInstance = createAuthenticatedAxios();
 
+  // Load state from location or sessionStorage - only runs once on component mount
   useEffect(() => {
-    if (!pocId) {
-      console.error('No POC ID provided');
+    // First try to get state from location
+    if (location.state && location.state.pocId) {
+      setPocId(location.state.pocId);
+      setClientId(location.state.clientId || null);
+      setPocName(location.state.pocName || null);
+      
+      // Save to sessionStorage for persistence
+      try {
+        sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+        if (location.state.clientId) {
+          sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+        }
+        if (location.state.pocName) {
+          sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+        }
+      } catch (error) {
+        console.error("Failed to save state to sessionStorage:", error);
+      }
+      
+      setIsLoading(false);
+      setStateLoaded(true);
+      return;
+    }
+    
+    // If not available in location, try sessionStorage
+    try {
+      const storedPocId = sessionStorage.getItem('pocId');
+      const storedClientId = sessionStorage.getItem('clientId');
+      const storedPocName = sessionStorage.getItem('pocName');
+      
+      if (storedPocId) {
+        setPocId(JSON.parse(storedPocId));
+        
+        if (storedClientId) {
+          setClientId(JSON.parse(storedClientId));
+        }
+        
+        if (storedPocName) {
+          setPocName(JSON.parse(storedPocName));
+        }
+        
+        setIsLoading(false);
+        setStateLoaded(true);
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to retrieve state from sessionStorage:", error);
+    }
+    
+    // If we get here, we couldn't get state from either source
+    navigate('/', { replace: true });
+  }, []); // Empty dependency array - only runs once
+
+  // Fetch doctor details and appointments - depends on pocId and stateLoaded
+  useEffect(() => {
+    // Only proceed if pocId is available and state loading is complete
+    if (!pocId || !stateLoaded) {
       return;
     }
 
-    // Fetch doctor details
-    axiosInstance.get(`/api/doctor/${pocId}`)
-      .then((response) => {
-        setDoctor(response.data);
-        console.log("Doctor data:", response.data);
+    const fetchData = async () => {
+      try {
+        // Fetch doctor details
+        const doctorResponse = await axiosInstance.get(`/api/doctor/${pocId}`);
+        setDoctor(doctorResponse.data);
+        console.log("Doctor data:", doctorResponse.data);
         
         // Set image preview if profile_image exists
-        if (response.data.profile_image) {
-          console.log("Found profile image:", response.data.profile_image);
-          setImagePreview(response.data.profile_image);
+        if (doctorResponse.data.profile_image) {
+          console.log("Found profile image:", doctorResponse.data.profile_image);
+          setImagePreview(doctorResponse.data.profile_image);
           
           // Debug: Check if image exists on server
-          axiosInstance.get(`/check-image-path?path=${response.data.profile_image}`)
-            .then(result => {
-              console.log("Image path check:", result.data);
-            })
-            .catch(err => console.error("Error checking image:", err));
+          try {
+            const imageCheckResult = await axiosInstance.get(`/check-image-path?path=${doctorResponse.data.profile_image}`);
+            console.log("Image path check:", imageCheckResult.data);
+          } catch (err) {
+            console.error("Error checking image:", err);
+          }
         }
-      })
-      .catch((error) => console.error('Error fetching doctor details:', error));
 
-    // Fetch appointments
-    axiosInstance.get(`/api/poc/appointments/${pocId}`)
-    .then((response) => {
-        console.log("Fetched appointments:", response.data);
-        setAppointments(response.data);
-    })
-    .catch((error) => console.error('Error fetching appointments:', error));
-  }, [pocId]);
+        // Fetch appointments
+        const appointmentsResponse = await axiosInstance.get(`/api/poc/appointments/${pocId}`);
+        console.log("Fetched appointments:", appointmentsResponse.data);
+        setAppointments(appointmentsResponse.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [pocId, stateLoaded]); // Only depends on pocId and stateLoaded
 
   const handleBackButton = () => {  
-    navigate("/back-button", { state: { pocId } });  
+    navigate("/back-button", { state: { pocId, clientId, pocName } });  
   };
 
   const handleImageChange = (e) => {
@@ -71,7 +137,11 @@ const UserProfile = () => {
   };
 
   const handleImageUpload = async () => {
-    if (!imageFile || !pocId) return;
+    if (!imageFile || !pocId) {
+      console.error("Missing imageFile or pocId for upload:", { imageFile, pocId });
+      alert('Unable to upload: missing required information');
+      return;
+    }
 
     setIsUploading(true);
     
@@ -102,7 +172,7 @@ const UserProfile = () => {
     }
   };
 
-  if (!doctor) {
+  if (isLoading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -111,32 +181,46 @@ const UserProfile = () => {
     );
   }
 
+  if (!doctor) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading profile data...</p>
+      </div>
+    );
+  }
+
   // Function to render the image or placeholder
-  const renderProfileImage = () => {
-    if (imagePreview) {
-      return (
+  // In UserProfile.js, modify the renderProfileImage function
+const renderProfileImage = () => {
+  if (imagePreview) {
+    return (
+      <div className="image-container">
         <img 
           src={imagePreview}
-          alt={doctor.name} 
+          alt={doctor.name || 'Doctor profile'} 
           className="user-profile__image" 
           onError={(e) => {
             console.error("Image failed to load:", imagePreview);
             e.target.onerror = null; 
             e.target.src = ''; 
-            // If image fails to load, show placeholder instead
             e.target.style.display = 'none';
             document.getElementById('profile-placeholder').style.display = 'flex';
           }}
         />
-      );
-    } else {
-      return (
-        <div id="profile-placeholder" className="user-profile__placeholder">
+        <div id="profile-placeholder" className="user-profile__placeholder" style={{display: 'none'}}>
           <FaUser size={40} />
         </div>
-      );
-    }
-  };
+      </div>
+    );
+  } else {
+    return (
+      <div id="profile-placeholder" className="user-profile__placeholder">
+        <FaUser size={40} />
+      </div>
+    );
+  }
+};
 
   return (
     <div className="user-profile-page">

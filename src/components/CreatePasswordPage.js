@@ -9,7 +9,21 @@ const CreatePasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');   
   const [message, setMessage] = useState('');   
   const [success, setSuccess] = useState(false);   
-  const navigate = useNavigate();   
+  const navigate = useNavigate();
+  
+  // Password validation states
+  const [validLength, setValidLength] = useState(false);
+  const [validFirstChar, setValidFirstChar] = useState(false);
+  const [validSpecial, setValidSpecial] = useState(false);
+  const [validDigit, setValidDigit] = useState(false);
+  
+  // Update validation states when password changes
+  useEffect(() => {
+    setValidLength(password.length >= 8);
+    setValidFirstChar(/^[a-zA-Z]/.test(password));
+    setValidSpecial(/[!@#$%^&*()_+\-=\]{};':"\\|,.<>?]/.test(password));
+    setValidDigit(/\d/.test(password));
+  }, [password]);
   
   const handleSubmit = async (e) => {   
     e.preventDefault();   
@@ -20,22 +34,22 @@ const CreatePasswordPage = () => {
     }   
   
     // Validate password   
-    if (!/^[a-zA-Z]/.test(password)) {   
+    if (!validFirstChar) {   
       setMessage('Password must start with a letter.');   
       return;   
     }   
   
-    if (password.length < 8) {   
+    if (!validLength) {   
       setMessage('Password must be at least 8 characters long.');   
       return;   
     }   
   
-    if (!/[!@#$%^&*()_+\-=\]{};':"\\|,.<>?]/.test(password)) {   
+    if (!validSpecial) {   
       setMessage('Password must contain at least one special character.');   
       return;   
     }   
   
-    if (!/\d/.test(password)) {   
+    if (!validDigit) {   
       setMessage('Password must contain at least one digit.');   
       return;   
     }   
@@ -85,7 +99,7 @@ const CreatePasswordPage = () => {
         <form onSubmit={handleSubmit}>   
           <input   
            type="password"   
-           placeholder="Password"   
+           placeholder="New Password"   
            onChange={(e) => setPassword(e.target.value)}   
            required   
           />   
@@ -109,10 +123,18 @@ const CreatePasswordPage = () => {
         <div className="password-rules-container">  
          <h3>Password Requirements</h3>  
          <ul>  
-          <li>Password must start with a letter.</li>  
-          <li>Password must be at least 8 characters long.</li>  
-          <li>Password must contain at least one special character (e.g., @, #, $, etc.).</li>  
-          <li>Password must contain at least one digit.</li>  
+          <li className={validFirstChar ? "valid-rule" : ""}>
+            Password must start with a letter.
+          </li>  
+          <li className={validLength ? "valid-rule" : ""}>
+            Password must be at least 8 characters long.
+          </li>  
+          <li className={validSpecial ? "valid-rule" : ""}>
+            Password must contain at least one special character (e.g., @, #, $, etc.).
+          </li>  
+          <li className={validDigit ? "valid-rule" : ""}>
+            Password must contain at least one digit.
+          </li>  
          </ul>  
         </div>  
       </div>   

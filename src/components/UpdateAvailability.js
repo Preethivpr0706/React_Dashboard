@@ -1,9 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Clock, User, Grid, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import createAuthenticatedAxios from '../createAuthenticatedAxios';
+
+// Custom hook for persistent state
+const useProtectedState = (key, initialValue) => {
+  // Initialize state using sessionStorage if available, otherwise use initialValue
+  const [value, setValue] = useState(() => {
+    try {
+      const storedValue = sessionStorage.getItem(key);
+      return storedValue ? JSON.parse(storedValue) : initialValue;
+    } catch (error) {
+      console.error(`Error retrieving ${key} from sessionStorage:`, error);
+      return initialValue;
+    }
+  });
+
+  // Update sessionStorage when the state changes
+  useEffect(() => {
+    try {
+      if (value !== null && value !== undefined) {
+        sessionStorage.setItem(key, JSON.stringify(value));
+      }
+    } catch (error) {
+      console.error(`Error saving ${key} to sessionStorage:`, error);
+    }
+  }, [key, value]);
+
+  return [value, setValue];
+};
+
 const UpdateAvailability = () => {
+  // Use protected state for persistent values across navigation
+  const [pocId, setPocId] = useProtectedState('pocId', null);
+  const [clientId, setClientId] = useProtectedState('clientId', null);
+  const [pocName, setPocName] = useProtectedState('pocName', null);
+  
+  // Local component state
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -19,10 +52,29 @@ const UpdateAvailability = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const clientId = location.state?.clientId;
-  const clientName = location.state?.clientName || null;
-
   const axiosInstance = createAuthenticatedAxios();
+  
+  // Initialize state from router location or session storage
+  useEffect(() => {
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state) {
+        if (location.state.pocId) setPocId(location.state.pocId);
+        if (location.state.clientId) setClientId(location.state.clientId);
+        if (location.state.clientName || location.state.pocName) {
+          setPocName(location.state.clientName || location.state.pocName);
+        }
+        return;
+      }
+      
+      // If we don't have clientId in our state, redirect to home
+      if (!clientId) {
+        navigate('/', { replace: true });
+      }
+    };
+    
+    loadState();
+  }, [location, navigate, setPocId, setClientId, setPocName, clientId]);
 
   useEffect(() => {
     // Set the background color when the component is mounted
@@ -35,21 +87,23 @@ const UpdateAvailability = () => {
   }, []);
     
   useEffect(() => {
-    // Fetch departments
-    setIsLoading(true);
-    axiosInstance
-      .post("/api/departments", { clientId })
-      .then((response) => response.data)
-      .then((data) => {
-        setDepartments(data);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching departments:', error);
-        setIsLoading(false);
-        setMessage('Error fetching departments.');
-        setMessageType('error');
-      });
+    // Fetch departments when clientId is available
+    if (clientId) {
+      setIsLoading(true);
+      axiosInstance
+        .post("/api/departments", { clientId })
+        .then((response) => response.data)
+        .then((data) => {
+          setDepartments(data);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching departments:', error);
+          setIsLoading(false);
+          setMessage('Error fetching departments.');
+          setMessageType('error');
+        });
+    }
   }, [clientId]);
    
   useEffect(() => {
@@ -73,6 +127,32 @@ const UpdateAvailability = () => {
         });
     }
   }, [selectedDoctor]);
+  
+  // NEW EFFECT: Fetch timings whenever selected date, doctor or availability mode changes
+  useEffect(() => {
+    // Only fetch timings if we have a doctor, date, and partial availability is selected
+    if (selectedDoctor && selectedDate && availability === 'partial') {
+      setTimings([]); // Clear previous timings
+      setIsLoading(true);
+      
+      axiosInstance
+        .post("/api/pocs/available-times-update", { 
+          pocId: selectedDoctor.POC_ID, 
+          date: selectedDate 
+        })
+        .then((response) => response.data)
+        .then((data) => {
+          setTimings(data);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching timings:', error);
+          setIsLoading(false);
+          setMessage('Error fetching timings.');
+          setMessageType('error');
+        });
+    }
+  }, [selectedDoctor, selectedDate, availability]);
    
   const handleDepartmentChange = (e) => {
     const departmentId = e.target.value;
@@ -129,27 +209,7 @@ const UpdateAvailability = () => {
     
     setSelectedDate(dateObj.Schedule_Date);
     setMessage('');
-    
-    if (availability === 'partial') {
-      setIsLoading(true);
-      // Fetch available timings for the selected doctor and date
-      axiosInstance
-        .post("/api/pocs/available-times-update", { 
-          pocId: selectedDoctor.POC_ID, 
-          date: dateObj.Schedule_Date 
-        })
-        .then((response) => response.data)
-        .then((data) => {
-          setTimings(data);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Error fetching timings:', error);
-          setIsLoading(false);
-          setMessage('Error fetching timings.');
-          setMessageType('error');
-        });
-    }
+    // The useEffect will handle fetching timings when needed
   };
     
   const handleTimingClick = (timing) => {
@@ -232,6 +292,26 @@ const UpdateAvailability = () => {
       default: return 'Available';
     }
   };
+
+  // If no clientId and not loading state, show a message or redirect
+  if (!clientId && !isLoading) {
+    return (
+      <div className="availability-page">
+        <div className="availability-container">
+          <div className="message error">
+            <AlertTriangle size={16} className="mr-2" />
+            Session expired or invalid. Please log in again.
+          </div>
+          <button 
+            className="update-button" 
+            onClick={() => navigate('/', { replace: true })}
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="availability-page">

@@ -2,14 +2,80 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DollarSign, X, Save, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import "../styles/EditConsultationFees.css";
-import authenticatedFetch from "../../authenticated Fetch";
+import authenticatedFetch from "../../authenticatedFetch";
 
 const FETCH_FEES_API = "/api/poc/get-consultation-fees";
 const UPDATE_FEES_API = "/api/poc/update-consultation-fees";
 
 export function EditConsultationFees() {
   const location = useLocation();
-  const { pocId } = location.state || {};
+  const navigate = useNavigate();
+  
+  // Use state with sessionStorage persistence
+  const [pocId, setPocId] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.pocId) {
+      try {
+        sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+      } catch (error) {
+        console.error("Failed to save pocId to sessionStorage:", error);
+      }
+      return location.state.pocId;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('pocId');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get pocId from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  const [clientId, setClientId] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.clientId) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+      } catch (error) {
+        console.error("Failed to save clientId to sessionStorage:", error);
+      }
+      return location.state.clientId;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('clientId');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get clientId from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  const [pocName, setPocName] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.pocName) {
+      try {
+        sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+      } catch (error) {
+        console.error("Failed to save pocName to sessionStorage:", error);
+      }
+      return location.state.pocName;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('pocName');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get pocName from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  // Component-specific state
   const [currentFees, setCurrentFees] = useState("");
   const [newFees, setNewFees] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +83,47 @@ export function EditConsultationFees() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const navigate = useNavigate();
+
+  // Load shared state from session storage
+  useEffect(() => {
+    // Update sessionStorage when pocId changes
+    if (pocId) {
+      try {
+        sessionStorage.setItem('pocId', JSON.stringify(pocId));
+      } catch (error) {
+        console.error("Failed to save pocId to sessionStorage:", error);
+      }
+    }
+  }, [pocId]);
+
+  useEffect(() => {
+    // Update sessionStorage when clientId changes
+    if (clientId) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(clientId));
+      } catch (error) {
+        console.error("Failed to save clientId to sessionStorage:", error);
+      }
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    // Update sessionStorage when pocName changes
+    if (pocName) {
+      try {
+        sessionStorage.setItem('pocName', JSON.stringify(pocName));
+      } catch (error) {
+        console.error("Failed to save pocName to sessionStorage:", error);
+      }
+    }
+  }, [pocName]);
+
+  // Redirect if no pocId is available
+  useEffect(() => {
+    if (!pocId) {
+      navigate('/', { replace: true });
+    }
+  }, [pocId, navigate]);
 
   useEffect(() => {
     if (!pocId) {
@@ -101,13 +207,18 @@ export function EditConsultationFees() {
     setShowConfirmation(false);
   };
 
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2
     }).format(value);
+  };
+
+  const handleGoBack = () => {
+    navigate("/poc-dashboard", { 
+      state: { pocId, clientId, pocName } 
+    });
   };
 
   return (

@@ -1,22 +1,97 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./styles/AppointmentDetails.css";
-import authenticatedFetch from "../authenticated Fetch";
+import authenticatedFetch from "../authenticatedFetch";
+// Import useProtectedState correctly - check implementation
+import { useProtectedState } from "../StatePersistence";
+
 const AppointmentDetailsAdmin = () => {
   const location = useLocation();
-  const clientId = location.state.clientId;
-  const status = location.state.status;
+  const navigate = useNavigate();
+  
+  // Get initial values from location state or default
+  const initialClientId = location.state?.clientId || null;
+  const initialStatus = location.state?.status || null;
+  
+  // Use regular useState for now until we verify useProtectedState implementation
+  const [clientId, setClientId] = useState(initialClientId);
+  const [status, setStatus] = useState(initialStatus);
+  
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const appointmentsPerPage = 10;
-  const navigate = useNavigate();
+
+  // Redirect if required state is missing
+  useEffect(() => {
+    if (!clientId || !status) {
+      // Try to retrieve from sessionStorage as a fallback
+      try {
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedStatus = sessionStorage.getItem('appointmentStatus');
+        
+        if (storedClientId && storedStatus) {
+          setClientId(JSON.parse(storedClientId));
+          setStatus(JSON.parse(storedStatus));
+        } else {
+          // If we can't get the required data, redirect to home
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+        navigate('/', { replace: true });
+      }
+    }
+  }, [clientId, status, navigate]);
+
+  // Save critical state to sessionStorage
+  useEffect(() => {
+    if (clientId && status) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(clientId));
+        sessionStorage.setItem('appointmentStatus', JSON.stringify(status));
+      } catch (error) {
+        console.error("Failed to save data to sessionStorage:", error);
+      }
+    }
+  }, [clientId, status]);
+
+  // Save search term and pagination to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('appointmentSearchTerm', searchTerm);
+      sessionStorage.setItem('appointmentCurrentPage', currentPage.toString());
+    } catch (error) {
+      console.error("Failed to save UI state to sessionStorage:", error);
+    }
+  }, [searchTerm, currentPage]);
+
+  // Load search term and pagination from sessionStorage on initial render
+  useEffect(() => {
+    try {
+      const storedSearchTerm = sessionStorage.getItem('appointmentSearchTerm');
+      const storedCurrentPage = sessionStorage.getItem('appointmentCurrentPage');
+      
+      if (storedSearchTerm !== null) {
+        setSearchTerm(storedSearchTerm);
+      }
+      
+      if (storedCurrentPage !== null) {
+        setCurrentPage(parseInt(storedCurrentPage, 10));
+      }
+    } catch (error) {
+      console.error("Failed to load UI state from sessionStorage:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchAppointments = async () => {
+      if (!clientId || !status) return;
+      
       try {
+        setLoading(true);
         const response = await authenticatedFetch("/api/admin/appointment-details", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -59,6 +134,11 @@ const AppointmentDetailsAdmin = () => {
     }
   };
 
+  // Reset current page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="appointment-details-page">
       <div className="appointment-details-header">
@@ -84,7 +164,11 @@ const AppointmentDetailsAdmin = () => {
             <div className="error-icon">!</div>
             <p>Error: {error}</p>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                window.location.reload();
+              }} 
               className="refresh-button"
             >
               Try Again
@@ -156,7 +240,9 @@ const AppointmentDetailsAdmin = () => {
               >
                 Previous
               </button>
-              <span className="pagination-info">Page {currentPage}</span>
+              <span className="pagination-info">
+                Page {currentPage} of {Math.ceil(filteredAppointments.length / appointmentsPerPage)}
+              </span>
               <button 
                 onClick={nextPage} 
                 disabled={indexOfLastAppointment >= filteredAppointments.length} 

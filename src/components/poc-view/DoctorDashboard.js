@@ -1,22 +1,78 @@
 import '../styles/PocView.css';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaUserCircle, FaBars, FaTimes, FaHome, FaCalendarAlt, FaCalendarDay, FaUser, FaSignOutAlt, FaLink, FaMoneyBillWave, FaHeadset } from "react-icons/fa";
-import authenticatedFetch from '../../authenticated Fetch';
+import { 
+  FaUserCircle, 
+  FaBars, 
+  FaTimes, 
+  FaHome, 
+  FaCalendarAlt, 
+  FaCalendarDay, 
+  FaUser, 
+  FaSignOutAlt, 
+  FaLink, 
+  FaMoneyBillWave, 
+  FaHeadset 
+} from "react-icons/fa";
+import authenticatedFetch from '../../authenticatedFetch';
+import { useProtectedState } from '../../StatePersistence';
 
 const DoctorDashboard = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const pocId = location.state?.pocId;  
-  const [clientId, setClientId] = useState(null);
-  const [pocName, setPocName] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeAppointments, setActiveAppointments] = useState(0);
   const [canceledAppointments, setCanceledAppointments] = useState(0);
   const [directAppointments, setDirectAppointments] = useState(0);
   const [teleAppointments, setTeleAppointments] = useState(0);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const drawerRef = useRef(null);
+  const toggleButtonRef = useRef(null);
+  
+  // State for protected data
+  const [pocId, setPocId] = useState(null);
+  const [clientId, setClientId] = useState(null);
+  const [pocName, setPocName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Load state from location or sessionStorage
+  useEffect(() => {
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state && location.state.pocId) {
+        setPocId(location.state.pocId);
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+        } catch (error) {
+          console.error("Failed to save pocId to sessionStorage:", error);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedPocId = sessionStorage.getItem('pocId');
+        
+        if (storedPocId) {
+          setPocId(JSON.parse(storedPocId));
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
 
   // Fetch clientId and POC name
   useEffect(() => {
@@ -32,6 +88,14 @@ const DoctorDashboard = () => {
           if (data.length > 0) {
             setClientId(data[0].Client_ID);
             setPocName(data[0].POC_Name);
+            
+            // Save to sessionStorage for persistence
+            try {
+              sessionStorage.setItem('clientId', JSON.stringify(data[0].Client_ID));
+              sessionStorage.setItem('pocName', JSON.stringify(data[0].POC_Name));
+            } catch (error) {
+              console.error("Failed to save client data to sessionStorage:", error);
+            }
           } else {
             console.error("No clientId found");
           }
@@ -43,10 +107,30 @@ const DoctorDashboard = () => {
       }
     };
   
-    if (pocId) fetchClientId();
-  }, [pocId]);
+    if (pocId && !clientId) fetchClientId();
+  }, [pocId, clientId]);
 
-  // Fetch total and cancelled appointment counts
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Navigation handlers
+  const handleDashboard = () => navigate("/poc-dashboard", { state: { pocId, clientId, pocName } });
+  const handleViewAppointments = () => navigate("/view-appointments", { state: { pocId, clientId, pocName } });
+  const handleTodaysAppointments = () => navigate("/todays-appointments", { state: { pocId, clientId, pocName } });
+  const handleUpdateAvailability = () => navigate("/update-availability-poc", { state: { pocId, clientId, pocName } });
+  const handleUserProfile = () => navigate("/poc-user-profile", { state: { pocId, clientId, pocName } });
+  const handleViewAppointmentDetails = (param, value) => navigate("/appointment-details", { state: { pocId, clientId, pocName, [param]: value } });
+  const handleMeetLink = () => navigate("/meet-link", { state: { pocId, clientId, pocName } });
+  const handleFees = () => navigate("/fees", { state: { pocId, clientId, pocName } });
+  const handleLogout = () => navigate("/logout");
+  const handleContactSupport = () => navigate("/contact-support", { state: { pocId, clientId, pocName } });
+
+  // Fetch appointment counts
   useEffect(() => {
     const fetchAppointmentCount = async (status, setState) => {
       try {
@@ -66,15 +150,7 @@ const DoctorDashboard = () => {
       }
     };
 
-    if (pocId) {
-      fetchAppointmentCount('Confirmed', setActiveAppointments);
-      fetchAppointmentCount('Cancelled', setCanceledAppointments);
-    }
-  }, [pocId]);
-
-  // Fetch tele and direct appointment count
-  useEffect(() => {
-    const fetchAppointmentCount = async (type, setState) => {
+    const fetchAppointmentTypeCount = async (type, setState) => {
       try {
         const response = await authenticatedFetch('/api/poc/typeAppointment', {
           method: 'POST',
@@ -93,100 +169,49 @@ const DoctorDashboard = () => {
     };
 
     if (pocId) {
-      fetchAppointmentCount('Direct Consultation', setDirectAppointments);
-      fetchAppointmentCount('Tele Consultation', setTeleAppointments);
+      fetchAppointmentCount('Confirmed', setActiveAppointments);
+      fetchAppointmentCount('Cancelled', setCanceledAppointments);
+      fetchAppointmentTypeCount('Direct Consultation', setDirectAppointments);
+      fetchAppointmentTypeCount('Tele Consultation', setTeleAppointments);
     }
   }, [pocId]);
 
-  // Navigation handlers
-  const handleViewAppointments = () => {
-    if (clientId) {
-      navigate(`/view-appointments`, { state: { clientId, pocId } });
-    } else {
-      console.error("clientId is not available yet.");
-    }
-  };
-
-  const handleUpdateAvailability = () => {
-    navigate("/update-availability-poc", { state: { pocId } });
-  };
-
-  const handleViewAppointmentDetails = (param, value) => {  
-    navigate("/appointment-details", { state: { pocId, [param]: value } });  
-  };
-
-  const handleMeetLink = () => {  
-    navigate("/meet-link", { state: { pocId } });  
-  };
-
-  const handleFees = () => {
-    navigate("/fees", { state: { pocId } });  
-  };
-
-  const handleLogout = () => {
-    navigate("/logout");
-  };
-  
-  const handleDashboard = () => {
-    navigate("/poc-dashboard", { state: { pocId } });
-    setDrawerOpen(false);
-  };
-
-  const handleTodaysAppointments = () => {
-    navigate(`/todays-appointments`, { state: { pocId } });
-    setDrawerOpen(false);
-  };
-
-  const handleUserProfile = () => {
-    navigate(`/poc-user-profile`, { state: { pocId } });
-    setDrawerOpen(false);
-    setShowDropdown(false);
-  };
-
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
-  
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  // Handle click outside dropdown to close it
+  // Close drawer/dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showDropdown && !event.target.closest('.user-profile-section')) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
-  
-  // Close drawer when clicking outside on mobile
-  useEffect(() => {
-    const handleClickOutsideDrawer = (event) => {
-      if (drawerOpen && 
-          !event.target.closest('.navigation-drawer') && 
-          !event.target.closest('.menu-toggle')) {
+      if (
+        drawerRef.current && !drawerRef.current.contains(event.target) &&
+        toggleButtonRef.current && !toggleButtonRef.current.contains(event.target)
+      ) {
         setDrawerOpen(false);
       }
+      
+      if (isDropdownOpen && !event.target.closest('.user-profile-section')) {
+        setIsDropdownOpen(false);
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutsideDrawer);
+    document.addEventListener("mousedown", handleClickOutside);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutsideDrawer);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [drawerOpen]);
+  }, [isDropdownOpen]);
+
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="dashboard-container">
       {/* Top Navigation */}
       <nav className="top-navigation">
         <div className="brand-section">
-          <button className="menu-toggle" onClick={toggleDrawer}>
+          <button 
+            className="menu-toggle" 
+            onClick={toggleDrawer}
+            ref={toggleButtonRef}
+          >
             <FaBars />
           </button>
           <h2 className="brand-name">MIOT DOCTOR</h2>
@@ -204,7 +229,7 @@ const DoctorDashboard = () => {
               onClick={toggleDropdown} 
               className="user-avatar"
             />
-            {showDropdown && (
+            {isDropdownOpen && (
               <ul className="user-dropdown">
                 <li onClick={handleUserProfile}>
                   <FaUser /> <span>View Profile</span>
@@ -219,7 +244,10 @@ const DoctorDashboard = () => {
       </nav>
 
       {/* Navigation Drawer */}
-      <div className={`navigation-drawer ${drawerOpen ? 'open' : ''}`}>
+      <div 
+        className={`navigation-drawer ${drawerOpen ? 'open' : ''}`}
+        ref={drawerRef}
+      >
         <div className="drawer-header">
           <h3>Menu</h3>
           <button className="close-drawer" onClick={toggleDrawer}>
@@ -258,7 +286,7 @@ const DoctorDashboard = () => {
       {/* Main Content */}
       <main className="dashboard-content">
         <section className="welcome-section">
-          <h1>Welcome  {pocName}😎</h1>
+          <h1>Welcome {pocName} 😎</h1>
           <p>Manage your appointments and availability with ease</p>
         </section>
 
@@ -352,7 +380,7 @@ const DoctorDashboard = () => {
           <div className="support-content">
             <h3>Need Help?</h3>
             <p>Our support team is always ready to assist you with any questions or issues.</p>
-            <button className="support-button">Contact Support</button>
+            <button className="support-button" onClick={handleContactSupport}>Contact Support</button>
           </div>
         </section>
       </main>

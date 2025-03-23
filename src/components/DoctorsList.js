@@ -1,22 +1,70 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./styles/DoctorsList.css";
-import authenticatedFetch from "../authenticated Fetch";
+import authenticatedFetch from "../authenticatedFetch";
 
 const DoctorsList = () => {
   const location = useLocation();
-  const clientId = location.state?.clientId || null;
-  const clientName = location.state?.clientName || null;
-
+  const navigate = useNavigate();
+  
+  // State for doctors data
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // State for protected data with persistence
+  const [clientId, setClientId] = useState(null);
+  const [clientName, setClientName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const navigate = useNavigate();
+  // Load state from location or sessionStorage
+  useEffect(() => {
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state && location.state.clientId) {
+        setClientId(location.state.clientId);
+        setClientName(location.state.clientName || null);
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+          if (location.state.clientName) {
+            sessionStorage.setItem('clientName', JSON.stringify(location.state.clientName));
+          }
+        } catch (error) {
+          console.error("Failed to save client data to sessionStorage:", error);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedClientName = sessionStorage.getItem('clientName');
+        
+        if (storedClientId) {
+          setClientId(JSON.parse(storedClientId));
+          if (storedClientName) {
+            setClientName(JSON.parse(storedClientName));
+          }
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
 
-  // Removed the blue background setting
-
+  // Fetch doctors data once clientId is available
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -39,8 +87,8 @@ const DoctorsList = () => {
       }
     };
 
-    if (clientId) fetchDoctors();
-  }, [clientId]);
+    if (clientId && !isLoading) fetchDoctors();
+  }, [clientId, isLoading]);
 
   const groupByDepartment = (doctors) => {
     const grouped = {};
@@ -63,7 +111,10 @@ const DoctorsList = () => {
 
   const groupedDoctors = groupByDepartment(filteredDoctors);
 
- 
+
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="doctors-page">
@@ -72,9 +123,7 @@ const DoctorsList = () => {
           <h1 className="doctors-title">
             {clientName ? `${clientName} - Doctors Directory` : "Doctors Directory"}
           </h1>
-          {/* <button className="back-button" onClick={handleBackButton}>
-            ← Back
-          </button> */}
+         
         </header>
 
         <div className="search-container">

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import "./styles/ViewPOC.css";
 import createAuthenticatedAxios from "../createAuthenticatedAxios";
 
 const ViewPOC = () => {
+  // State definitions
   const [departments, setDepartments] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [pocs, setPocs] = useState([]);
@@ -12,38 +12,108 @@ const ViewPOC = () => {
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Client state with persistence
+  const [clientId, setClientId] = useState(null);
+  const [clientName, setClientName] = useState("Client");
+  const [isLoading, setIsLoading] = useState(true);
+  
   const navigate = useNavigate();
   const location = useLocation();
-  const clientId = location.state?.clientId;
-  const clientName = location.state?.clientName || "Client";
-
   const axiosInstance = createAuthenticatedAxios();
+  const initialLoadRef = useRef(true);
 
-  // Removed the gradient background effect
-  // No need for the body background style manipulation
+  // Load state from location or sessionStorage
+  useEffect(() => {
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state && location.state.clientId) {
+        setClientId(location.state.clientId);
+        setClientName(location.state.clientName || "Client");
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+          if (location.state.clientName) {
+            sessionStorage.setItem('clientName', JSON.stringify(location.state.clientName));
+          }
+        } catch (error) {
+          console.error("Failed to save client data to sessionStorage:", error);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedClientName = sessionStorage.getItem('clientName');
+        
+        if (storedClientId) {
+          setClientId(JSON.parse(storedClientId));
+          if (storedClientName) {
+            setClientName(JSON.parse(storedClientName));
+          }
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
+
+  // Load selected department from sessionStorage if available
+  useEffect(() => {
+    if (initialLoadRef.current && !isLoading) {
+      try {
+        const storedDepartment = sessionStorage.getItem('selectedDepartment');
+        if (storedDepartment) {
+          setSelectedDepartment(JSON.parse(storedDepartment));
+        }
+        initialLoadRef.current = false;
+      } catch (error) {
+        console.error("Failed to retrieve selected department from sessionStorage:", error);
+      }
+    }
+  }, [isLoading]);
 
   // Fetch departments on component mount
   useEffect(() => {
-    setDepartmentsLoading(true);
-    axiosInstance
-      .post("/api/departments", { clientId })
-      .then((response) => {
-        console.log("Fetched departments:", response.data);
-        setDepartments(response.data);
-        setDepartmentsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching departments:", error);
-        setError("Failed to load departments. Please try again later.");
-        setDepartmentsLoading(false);
-      });
+    if (clientId) {
+      setDepartmentsLoading(true);
+      axiosInstance
+        .post("/api/departments", { clientId })
+        .then((response) => {
+          console.log("Fetched departments:", response.data);
+          setDepartments(response.data);
+          setDepartmentsLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching departments:", error);
+          setError("Failed to load departments. Please try again later.");
+          setDepartmentsLoading(false);
+        });
+    }
   }, [clientId]);
 
   // Fetch POCs when the selected department changes
   useEffect(() => {
-    if (selectedDepartment) {
+    if (selectedDepartment && clientId) {
       setLoading(true);
       setPocs([]);
+      
+      // Save selected department to sessionStorage
+      try {
+        sessionStorage.setItem('selectedDepartment', JSON.stringify(selectedDepartment));
+      } catch (error) {
+        console.error("Failed to save selected department to sessionStorage:", error);
+      }
       
       axiosInstance
         .post("/api/pocs", { departmentId: selectedDepartment, clientId })
@@ -65,7 +135,15 @@ const ViewPOC = () => {
   };
 
   const handleViewAppointments = (pocId) => {
-    navigate(`/view-appointments/`, { state: { clientId, pocId } });
+    // Pass all necessary state in navigation
+    navigate(`/view-appointments/`, { 
+      state: { 
+        clientId, 
+        pocId,
+        clientName,
+        // Include any other state you might need
+      } 
+    });
   };
 
   // Get department name from ID
@@ -75,6 +153,13 @@ const ViewPOC = () => {
     );
     return department ? department.Value_name : "";
   };
+
+  if (isLoading) {
+    return <div className="loading-state">
+      <div className="spinner"></div>
+      <p>Loading...</p>
+    </div>;
+  }
 
   return (
     <div className="departments-pocs-container">

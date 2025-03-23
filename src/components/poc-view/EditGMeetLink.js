@@ -2,14 +2,80 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Video, X, Save, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import "../styles/EditGMeetLink.css";
-import authenticatedFetch from "../../authenticated Fetch";
+import authenticatedFetch from "../../authenticatedFetch";
 
 const FETCH_LINK_API = "/api/poc/get-link";
 const UPDATE_LINK_API = "/api/poc/update-link";
 
 export function EditGMeetLink() {
   const location = useLocation();
-  const { pocId } = location.state || {};
+  const navigate = useNavigate();
+  
+  // Use state with sessionStorage persistence
+  const [pocId, setPocId] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.pocId) {
+      try {
+        sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+      } catch (error) {
+        console.error("Failed to save pocId to sessionStorage:", error);
+      }
+      return location.state.pocId;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('pocId');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get pocId from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  const [clientId, setClientId] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.clientId) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+      } catch (error) {
+        console.error("Failed to save clientId to sessionStorage:", error);
+      }
+      return location.state.clientId;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('clientId');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get clientId from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  const [pocName, setPocName] = useState(() => {
+    // First try to get from location
+    if (location.state && location.state.pocName) {
+      try {
+        sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+      } catch (error) {
+        console.error("Failed to save pocName to sessionStorage:", error);
+      }
+      return location.state.pocName;
+    }
+    
+    // Then try from sessionStorage
+    try {
+      const storedValue = sessionStorage.getItem('pocName');
+      return storedValue ? JSON.parse(storedValue) : null;
+    } catch (error) {
+      console.error("Failed to get pocName from sessionStorage:", error);
+      return null;
+    }
+  });
+  
+  // Component-specific state
   const [currentLink, setCurrentLink] = useState("");
   const [newLink, setNewLink] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +83,47 @@ export function EditGMeetLink() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const navigate = useNavigate();
+
+  // Load shared state from session storage
+  useEffect(() => {
+    // Update sessionStorage when pocId changes
+    if (pocId) {
+      try {
+        sessionStorage.setItem('pocId', JSON.stringify(pocId));
+      } catch (error) {
+        console.error("Failed to save pocId to sessionStorage:", error);
+      }
+    }
+  }, [pocId]);
+
+  useEffect(() => {
+    // Update sessionStorage when clientId changes
+    if (clientId) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(clientId));
+      } catch (error) {
+        console.error("Failed to save clientId to sessionStorage:", error);
+      }
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    // Update sessionStorage when pocName changes
+    if (pocName) {
+      try {
+        sessionStorage.setItem('pocName', JSON.stringify(pocName));
+      } catch (error) {
+        console.error("Failed to save pocName to sessionStorage:", error);
+      }
+    }
+  }, [pocName]);
+
+  // Redirect if no pocId is available
+  useEffect(() => {
+    if (!pocId) {
+      navigate('/', { replace: true });
+    }
+  }, [pocId, navigate]);
 
   useEffect(() => {
     if (!pocId) {
@@ -100,6 +206,11 @@ export function EditGMeetLink() {
     setShowConfirmation(false);
   };
 
+  const handleGoBack = () => {
+    navigate("/poc-dashboard", { 
+      state: { pocId, clientId, pocName } 
+    });
+  };
 
   return (
     <div className="gmeet-manager">

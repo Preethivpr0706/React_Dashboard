@@ -2,21 +2,61 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Briefcase, ArrowLeft, Search, Loader, AlertCircle } from "lucide-react";
 import "./styles/DepartmentList.css";
-import authenticatedFetch from "../authenticated Fetch";
+import authenticatedFetch from "../authenticatedFetch";
+
 const DepartmentList = () => {
   const location = useLocation();
-  const clientId = location.state?.clientId;
+  const navigate = useNavigate();
+  
+  // State for departments data
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  
+  // State for protected data with persistence
+  const [clientId, setClientId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Load state from location or sessionStorage
   useEffect(() => {
-    // Remove the background color setting
-    return () => {};
-  }, []);
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state && location.state.clientId) {
+        setClientId(location.state.clientId);
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+        } catch (error) {
+          console.error("Failed to save clientId to sessionStorage:", error);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedClientId = sessionStorage.getItem('clientId');
+        
+        if (storedClientId) {
+          setClientId(JSON.parse(storedClientId));
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
 
+  // Fetch departments once clientId is available
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -39,24 +79,29 @@ const DepartmentList = () => {
       }
     };
 
-    fetchDepartments();
-  }, [clientId]);
+    if (clientId && !isLoading) {
+      fetchDepartments();
+    }
+  }, [clientId, isLoading]);
 
-  const handleGoBack = () => {
-    navigate(-1);
-  };
+
 
   const filteredDepartments = departments.filter(dept =>
     dept.DepartmentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <Loader className="loading-spinner" size={36} />
+        <p>Loading departments...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="department-container">
       <div className="department-header">
-        <button className="back-button" onClick={handleGoBack}>
-          <ArrowLeft size={18} />
-          <span>Back</span>
-        </button>
         <h1 className="department-title">
           <Briefcase className="department-icon" size={28} />
           Departments

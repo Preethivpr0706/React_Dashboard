@@ -18,17 +18,37 @@ const LogoutPage = () => {
     }, 300);
   };
   
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setIsExiting(true);
-    setTimeout(() => {
-      // Add logout logic here
-      localStorage.removeItem('token');
-    localStorage.removeItem('clientId');
-    localStorage.removeItem('clientName');
-      navigate('/'); // Redirect to the home page or login page
-      console.log('Logged out');
+    setTimeout(async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/logout', {
+                method: 'POST',
+                credentials: 'include', // Ensures cookies are sent with the request
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                console.log('Logged out:', result.message);
+            } else {
+                console.error('Logout failed:', result.message);
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
+        // Clear local storage
+        localStorage.removeItem('clientId');
+        localStorage.removeItem('clientName');
+
+        // Redirect to the login page
+        navigate('/');
     }, 300);
-  };
+};
+
   
   return (
     <div className="logout-page">

@@ -3,32 +3,41 @@ import { Link } from 'react-router-dom';
 import './styles/SignupPage.css';
 
 const SignupPage = () => {
-  const [clients, setClients] = useState([]); // To store client list
+  const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [message, setMessage] = useState(''); // To store success/failure message
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // To disable the button after successful verification
+  const [message, setMessage] = useState('');
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch clients from the database
   useEffect(() => {
     const fetchClients = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch('/api/clients', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({}), // If any additional data is required, include it here
+          body: JSON.stringify({}),
         });
         const data = await response.json();
         setClients(data);
       } catch (error) {
         console.error('Error fetching clients:', error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchClients();
   }, []);
+
+  const filteredClients = clients.filter(client =>
+    client.Client_Name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,11 +45,20 @@ const SignupPage = () => {
     setMessage('');
 
     if (!selectedClient || !email) {
-      setMessage('Please select a client and enter an email.');
+      setMessage('Please select a client and enter your email address.');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setMessage('Please enter a valid email address.');
       return;
     }
 
     try {
+      setIsButtonDisabled(true);
+      // Visual feedback while processing
+      setMessage('Verifying your email...');
+      
       // Send request to verify email
       const response = await fetch('/api/verify-poc-email', {
         method: 'POST',
@@ -58,62 +76,136 @@ const SignupPage = () => {
       if (result.success) {
         setSent(true);
         setMessage(result.message);
-        setIsButtonDisabled(true); // Disable the button after successful verification
       } else {
         setMessage(result.message);
+        setIsButtonDisabled(false);
       }
     } catch (error) {
       console.error('Error verifying email:', error.message);
       setMessage('An error occurred. Please try again later.');
+      setIsButtonDisabled(false);
     }
   };
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const handleClientChange = (e) => {
+    setSelectedClient(e.target.value);
+    setSearchTerm('');
+  };
+
+  const selectedClientName = clients.find(client => client.Client_ID === selectedClient)?.Client_Name || '';
+
   return (
-    <div className="sign-up-page">
-      <div className="sign-up-card">
-        <h1 className="sign-up-title">Sign Up</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="client">
-              Select Your Client
-            </label>
-            <select
-              id="client"
-              value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
-              className="form-control"
+    <div className="signup-container">
+      <div className="signup-content">
+        <div className="signup-header">
+          <h1>Create Your Account</h1>
+          <p>Join our healthcare platform to access your patient data securely</p>
+        </div>
+
+        <div className="signup-form-container">
+          <form onSubmit={handleSubmit} className="signup-form">
+            <div className="form-group">
+              <label htmlFor="client">Healthcare Provider</label>
+              <div className="select-wrapper">
+                {selectedClient ? (
+                  <div className="selected-client">
+                    <span>{selectedClientName}</span>
+                    <button 
+                      type="button" 
+                      className="change-btn"
+                      onClick={() => setSelectedClient('')}
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="search-container">
+                      <input
+                        type="text"
+                        placeholder="Search for your healthcare provider"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                      />
+                      <span className="search-icon">🔍</span>
+                    </div>
+                    <div className="client-list">
+                      {isLoading ? (
+                        <div className="loading-spinner">Loading providers...</div>
+                      ) : filteredClients.length > 0 ? (
+                        filteredClients.map((client) => (
+                          <div 
+                            key={client.Client_ID} 
+                            className="client-option"
+                            onClick={() => {
+                              setSelectedClient(client.Client_ID);
+                              setSearchTerm('');
+                            }}
+                          >
+                            {client.Client_Name}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-results">No providers found</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <div className="input-wrapper">
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className={`form-input ${email ? 'has-value' : ''}`}
+                />
+                <span className="input-icon">✉️</span>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className={`signup-btn ${isButtonDisabled ? 'disabled' : ''}`}
+              disabled={isButtonDisabled}
             >
-              <option value="">Select Client</option>
-              {clients.map((client) => (
-                <option key={client.Client_ID} value={client.Client_ID}>
-                  {client.Client_Name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">
-              Enter Your Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="doctor@xyz.com"
-              className="form-control"
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={isButtonDisabled}>
-            Verify Your Email
-          </button>
-          {message && (
-            <p className={sent ? 'text-success' : 'text-danger'}>{message}</p>
-          )}
+              {isButtonDisabled ? 'Verifying...' : 'Verify Email'}
+            </button>
+
+            {message && (
+              <div className={`message-container ${sent ? 'success' : 'error'}`}>
+                <span className="message-icon">{sent ? '✓' : '!'}</span>
+                <p>{message}</p>
+              </div>
+            )}
+          </form>
+        </div>
+
+        <div className="signup-footer">
           <p>
-            Have an account? <Link to="/">Login</Link>
+            Already have an account? <Link to="/">Sign in</Link>
           </p>
-        </form>
+        </div>
+      </div>
+      
+      <div className="signup-background">
+        <div className="signup-illustration">
+          <div className="illustration-content">
+            <h2>Secure Healthcare Access</h2>
+            <p>Join thousands of healthcare professionals using our platform to manage patient care efficiently.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

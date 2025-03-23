@@ -4,18 +4,23 @@ import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/TodaysAppointments.css";
-import authenticatedFetch from "../authenticated Fetch";
+import authenticatedFetch from "../authenticatedFetch";
 
 const TodaysAppointmentsAdmin = () => {
     const location = useLocation();
-    const clientId = location.state.clientId;
-    const clientName = location.state.clientName;
+    const navigate = useNavigate();
+    
+    // State for data
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState("all");
+    
+    // State for protected data with persistence
+    const [clientId, setClientId] = useState(null);
+    const [clientName, setClientName] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -29,6 +34,52 @@ const TodaysAppointmentsAdmin = () => {
         day: 'numeric'
     });
 
+    // Load state from location or sessionStorage
+    useEffect(() => {
+        const loadState = () => {
+            // First try to get state from location
+            if (location.state && location.state.clientId) {
+                setClientId(location.state.clientId);
+                setClientName(location.state.clientName || "");
+                
+                // Save to sessionStorage for persistence
+                try {
+                    sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+                    if (location.state.clientName) {
+                        sessionStorage.setItem('clientName', JSON.stringify(location.state.clientName));
+                    }
+                } catch (error) {
+                    console.error("Failed to save client data to sessionStorage:", error);
+                }
+                
+                setIsLoading(false);
+                return;
+            }
+            
+            // If not available in location, try sessionStorage
+            try {
+                const storedClientId = sessionStorage.getItem('clientId');
+                const storedClientName = sessionStorage.getItem('clientName');
+                
+                if (storedClientId) {
+                    setClientId(JSON.parse(storedClientId));
+                    if (storedClientName) {
+                        setClientName(JSON.parse(storedClientName));
+                    }
+                    setIsLoading(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to retrieve state from sessionStorage:", error);
+            }
+            
+            // If we get here, we couldn't get state from either source
+            navigate('/', { replace: true });
+        };
+        
+        loadState();
+    }, [location, navigate]);
+
     useEffect(() => {
         document.body.classList.add('appointments-page-background');
         return () => {
@@ -38,6 +89,8 @@ const TodaysAppointmentsAdmin = () => {
 
     useEffect(() => {
         const fetchTodaysAppointments = async () => {
+            if (!clientId) return;
+            
             try {
                 const response = await authenticatedFetch("/api/admin/todays-appointments", {
                     method: "POST",
@@ -179,6 +232,10 @@ const TodaysAppointmentsAdmin = () => {
     const availedCount = appointments.filter(app => app.Status === "Availed").length;
     const notAvailedCount = appointments.filter(app => app.Status === "Not_Availed").length;
 
+    if (isLoading) {
+        return <div className="loading">Loading...</div>;
+    }
+
     return (
         <div className="appointments-container">
             <ToastContainer />
@@ -299,7 +356,6 @@ const TodaysAppointmentsAdmin = () => {
                     </div>
                 ) : currentAppointments.length === 0 ? (
                     <div className="appointments-empty">
-    
                         <h3>No appointments found</h3>
                         <p>There are no appointments for today that match your filter.</p>
                     </div>

@@ -2,19 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
 import '../styles/AvailabilityManager.css';
 import BackButtonPOC from './BackButtonPOC';
-import authenticatedFetch from '../../authenticated Fetch';
+import authenticatedFetch from '../../authenticatedFetch';
 
 const AvailabilityManager = () => {
-  const location = useLocation();
-  const pocId = location.state?.pocId;
   const [selectedDate, setSelectedDate] = useState('');
   const [availability, setAvailability] = useState('full');
   const [timings, setTimings] = useState([]);
   const [selectedTimings, setSelectedTimings] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // State for protected data
+  const [pocId, setPocId] = useState(null);
+  const [clientId, setClientId] = useState(null);
+  const [pocName, setPocName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Set the background color when the component is mounted
@@ -26,10 +32,72 @@ const AvailabilityManager = () => {
     };
   }, []);
   
+  // Load state from location or sessionStorage
   useEffect(() => {
-    // Fetch available dates immediately
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state && location.state.pocId) {
+        setPocId(location.state.pocId);
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+        } catch (error) {
+          console.error("Failed to save pocId to sessionStorage:", error);
+        }
+        
+        if (location.state.clientId) {
+          setClientId(location.state.clientId);
+          try {
+            sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+          } catch (error) {
+            console.error("Failed to save clientId to sessionStorage:", error);
+          }
+        }
+        
+        if (location.state.pocName) {
+          setPocName(location.state.pocName);
+          try {
+            sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+          } catch (error) {
+            console.error("Failed to save pocName to sessionStorage:", error);
+          }
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedPocId = sessionStorage.getItem('pocId');
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedPocName = sessionStorage.getItem('pocName');
+        
+        if (storedPocId) {
+          setPocId(JSON.parse(storedPocId));
+          if (storedClientId) setClientId(JSON.parse(storedClientId));
+          if (storedPocName) setPocName(JSON.parse(storedPocName));
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
+
+  // Fetch available dates when pocId is available
+  useEffect(() => {
+    if (!pocId || isLoading) return;
+    
     setLoading(true);
-    authenticatedFetch('api/pocs/available-dates-update', {
+    authenticatedFetch('/api/pocs/available-dates-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pocId: pocId }),
@@ -48,12 +116,33 @@ const AvailabilityManager = () => {
         console.error('Error fetching available dates:', error);
         setLoading(false);
       });
-  }, [pocId]);
+  }, [pocId, isLoading]);
 
   const handleAvailabilityChange = (e) => {
-    setAvailability(e.target.value);
-    if (e.target.value === 'partial') {
+    const newAvailability = e.target.value;
+    setAvailability(newAvailability);
+    
+    if (newAvailability === 'partial') {
       setSelectedTimings([]); // Reset selected timings when switching to partial
+      
+      // Fetch timings if a date is already selected
+      if (selectedDate) {
+        setLoading(true);
+        authenticatedFetch('/api/pocs/available-times-update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pocId: pocId, date: selectedDate }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            setTimings(data);
+            setLoading(false);
+          })
+          .catch((error) => {
+            console.error('Error fetching timings:', error);
+            setLoading(false);
+          });
+      }
     }
   };
 
@@ -67,7 +156,7 @@ const AvailabilityManager = () => {
       setLoading(true);
       
       // Fetch available timings for the selected date
-      authenticatedFetch('api/pocs/available-times-update', {
+      authenticatedFetch('/api/pocs/available-times-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pocId: pocId, date: dateObj.Schedule_Date }),
@@ -106,7 +195,7 @@ const AvailabilityManager = () => {
     setLoading(true);
     setMessage("");
     
-    const endpoint = availability === 'full' ? 'api/pocs/update-full' : 'api/pocs/update-partial';
+    const endpoint = availability === 'full' ? '/api/pocs/update-full' : '/api/pocs/update-partial';
     const body = {
       pocId: pocId,
       date: selectedDate,
@@ -125,7 +214,7 @@ const AvailabilityManager = () => {
           setMessage("Doctor's availability has been updated successfully!");
           
           // Refresh available dates
-          return authenticatedFetch('api/pocs/available-dates-update', {
+          return authenticatedFetch('/api/pocs/available-dates-update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pocId: pocId }),
@@ -155,7 +244,7 @@ const AvailabilityManager = () => {
   };
 
   const handleBackButton = () => {  
-    navigate("/doctor-dashboard", { state: { pocId } });  
+    navigate("/doctor-dashboard", { state: { pocId, clientId, pocName } });  
   };
   
   // Format date for display
@@ -178,6 +267,10 @@ const AvailabilityManager = () => {
       default: return 'Available';
     }
   };
+  
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
   
   return (
     <div className="availability-page">

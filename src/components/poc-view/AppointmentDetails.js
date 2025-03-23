@@ -2,17 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";  
 import "../styles/AppointmentDetails.css";  
 import BackButtonPOC from "./BackButtonPOC";  
-import authenticatedFetch from "../../authenticated Fetch";
+import authenticatedFetch from "../../authenticatedFetch";
   
 const AppointmentDetails = () => {  
-  const location = useLocation();  
-  const pocId = location.state?.pocId;  
-  const status = location.state?.status;  
-  const type = location.state?.type;  
   const [appointments, setAppointments] = useState([]);  
   const [loading, setLoading] = useState(true);  
   const [error, setError] = useState(null);  
-  const navigate = useNavigate();  
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // State for protected data
+  const [pocId, setPocId] = useState(null);
+  const [clientId, setClientId] = useState(null);
+  const [pocName, setPocName] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [type, setType] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Set the background color when the component is mounted
@@ -24,8 +29,96 @@ const AppointmentDetails = () => {
     };
   }, []);
 
+  // Load state from location or sessionStorage
+  useEffect(() => {
+    const loadState = () => {
+      // First try to get state from location
+      if (location.state) {
+        if (location.state.pocId) {
+          setPocId(location.state.pocId);
+          // Save to sessionStorage for persistence
+          try {
+            sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+          } catch (error) {
+            console.error("Failed to save pocId to sessionStorage:", error);
+          }
+        }
+        
+        if (location.state.clientId) {
+          setClientId(location.state.clientId);
+          try {
+            sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+          } catch (error) {
+            console.error("Failed to save clientId to sessionStorage:", error);
+          }
+        }
+        
+        if (location.state.pocName) {
+          setPocName(location.state.pocName);
+          try {
+            sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+          } catch (error) {
+            console.error("Failed to save pocName to sessionStorage:", error);
+          }
+        }
+        
+        if (location.state.status) {
+          setStatus(location.state.status);
+          try {
+            sessionStorage.setItem('appointmentStatus', JSON.stringify(location.state.status));
+          } catch (error) {
+            console.error("Failed to save status to sessionStorage:", error);
+          }
+        }
+        
+        if (location.state.type) {
+          setType(location.state.type);
+          try {
+            sessionStorage.setItem('appointmentType', JSON.stringify(location.state.type));
+          } catch (error) {
+            console.error("Failed to save type to sessionStorage:", error);
+          }
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not available in location, try sessionStorage
+      try {
+        const storedPocId = sessionStorage.getItem('pocId');
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedPocName = sessionStorage.getItem('pocName');
+        const storedStatus = sessionStorage.getItem('appointmentStatus');
+        const storedType = sessionStorage.getItem('appointmentType');
+        
+        if (storedPocId) setPocId(JSON.parse(storedPocId));
+        if (storedClientId) setClientId(JSON.parse(storedClientId));
+        if (storedPocName) setPocName(JSON.parse(storedPocName));
+        if (storedStatus) setStatus(JSON.parse(storedStatus));
+        if (storedType) setType(JSON.parse(storedType));
+        
+        if (storedPocId && (storedStatus || storedType)) {
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+  }, [location, navigate]);
+
+  // Fetch appointment data
   useEffect(() => {  
-    const fetchAppointments = async () => {  
+    const fetchAppointments = async () => {
+      // Only fetch if the required data is available
+      if (!pocId || (!status && !type)) return;
+      
       try {  
         const response = await authenticatedFetch("/api/poc/appointment-details", {  
           method: "POST",  
@@ -46,11 +139,13 @@ const AppointmentDetails = () => {
       }  
     };  
     
-    fetchAppointments();  
-  }, [pocId, status, type]);
+    if (!isLoading) {
+      fetchAppointments();
+    }
+  }, [pocId, status, type, isLoading]);
   
   const handleBackButton = () => {  
-    navigate("/doctor-dashboard", { state: { pocId } });  
+    navigate("/doctor-dashboard", { state: { pocId, clientId, pocName } });  
   };  
 
   const formatDate = (dateString) => {
@@ -58,11 +153,29 @@ const AppointmentDetails = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
   
+  // Fixed function that was causing the error
   const getPaymentStatusClass = (status) => {
+    // Check if status is null or undefined before calling toLowerCase()
+    if (!status) return 'payment-status-unknown';
+    
     return status.toLowerCase() === 'paid' 
       ? 'payment-status-paid' 
       : 'payment-status-unpaid';
   };
+  
+  // Another fixed function to safely filter appointments
+  const countPaidAppointments = () => {
+    return appointments.filter(a => a.Payment_Status && a.Payment_Status.toLowerCase() === 'paid').length;
+  };
+  
+  // Safe function to count unpaid appointments
+  const countUnpaidAppointments = () => {
+    return appointments.filter(a => a.Payment_Status && a.Payment_Status.toLowerCase() !== 'paid').length;
+  };
+  
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
   
   return (  
     <div className="appointment-details-page">
@@ -93,11 +206,11 @@ const AppointmentDetails = () => {
                   </div>
                   <div className="stat-card">
                     <h3>Paid</h3>
-                    <p>{appointments.filter(a => a.Payment_Status.toLowerCase() === 'paid').length}</p>
+                    <p>{countPaidAppointments()}</p>
                   </div>
                   <div className="stat-card">
                     <h3>Unpaid</h3>
-                    <p>{appointments.filter(a => a.Payment_Status.toLowerCase() !== 'paid').length}</p>
+                    <p>{countUnpaidAppointments()}</p>
                   </div>
                 </div>
                 
@@ -121,19 +234,19 @@ const AppointmentDetails = () => {
                       {appointments.map((appt, index) => (
                         <tr key={index}>
                           <td>{index + 1}</td>
-                          <td>{appt.UserName}</td>
-                          <td>{appt.UserContact}</td>
-                          <td>{appt.UserLocation}</td>
-                          <td>{appt.POCName}</td>
-                          <td>{appt.Specialization}</td>
+                          <td>{appt.UserName || 'N/A'}</td>
+                          <td>{appt.UserContact || 'N/A'}</td>
+                          <td>{appt.UserLocation || 'N/A'}</td>
+                          <td>{appt.POCName || 'N/A'}</td>
+                          <td>{appt.Specialization || 'N/A'}</td>
                           <td>
-                            <span className="appointment-type">{appt.AppointmentType}</span>
+                            <span className="appointment-type">{appt.AppointmentType || 'N/A'}</span>
                           </td>
-                          <td>{formatDate(appt.AppointmentDate)}</td>
-                          <td>{appt.AppointmentTime}</td>
+                          <td>{appt.AppointmentDate ? formatDate(appt.AppointmentDate) : 'N/A'}</td>
+                          <td>{appt.AppointmentTime || 'N/A'}</td>
                           <td>
                             <span className={getPaymentStatusClass(appt.Payment_Status)}>
-                              {appt.Payment_Status}
+                              {appt.Payment_Status || 'Unknown'}
                             </span>
                           </td>
                         </tr>

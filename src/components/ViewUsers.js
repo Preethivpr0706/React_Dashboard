@@ -1,38 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import './styles/ViewUsers.css';
 import createAuthenticatedAxios from '../createAuthenticatedAxios';
+
 const ViewUsers = () => {
   const location = useLocation();
-  const clientId = location.state?.clientId || null;
-  const clientName = location.state?.clientName || null;
+  const navigate = useNavigate();
+  
+  // State variables
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Protected state - initialize from location directly to avoid race conditions
+  const [clientId, setClientId] = useState(location.state?.clientId || null);
+  const [clientName, setClientName] = useState(location.state?.clientName || null);
+  
   const itemsPerPage = 10;
-  const navigate = useNavigate();
   const axiosInstance = createAuthenticatedAxios();
 
+  // Load state from location or sessionStorage - run only once on mount
   useEffect(() => {
-    // Set the background color when the component is mounted
-    document.body.style.backgroundColor = "#f0f7ff";
+    const loadState = () => {
+      // If clientId is already set from location.state in the initial state, skip
+      if (clientId) {
+        // Still save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('clientId', JSON.stringify(clientId));
+          if (clientName) {
+            sessionStorage.setItem('clientName', JSON.stringify(clientName));
+          }
+        } catch (error) {
+          console.error("Failed to save client data to sessionStorage:", error);
+        }
+        return;
+      }
+      
+      // If not available in initial state, try sessionStorage
+      try {
+        const storedClientId = sessionStorage.getItem('clientId');
+        const storedClientName = sessionStorage.getItem('clientName');
+        
+        if (storedClientId) {
+          setClientId(JSON.parse(storedClientId));
+          if (storedClientName) {
+            setClientName(JSON.parse(storedClientName));
+          }
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+      }
+      
+      // If we get here, we couldn't get state from either source
+      navigate('/', { replace: true });
+    };
+    
+    loadState();
+    // Empty dependency array ensures this only runs once on mount
+  }, []);
 
-    // Cleanup when the component is unmounted or navigation happens
+  // Set background color
+  useEffect(() => {
+    document.body.style.backgroundColor = "#f0f7ff";
     return () => {
       document.body.style.backgroundColor = "";
     };
   }, []);
 
+  // Fetch users data
   useEffect(() => {
+    if (!clientId) return;
+    
+    console.log("Fetching users with clientId:", clientId);
     setIsLoading(true);
     axiosInstance
       .post('/api/getUsers', { clientId })
       .then((response) => {
         const data = response.data || [];
+        console.log("Users data received:", data.length);
         setUsers(data);
         setFilteredUsers(data);
         setIsLoading(false);
@@ -61,7 +110,6 @@ const ViewUsers = () => {
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
   const handlePrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const handleNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
-
 
   // Calculate page numbers to display (show max 5 page numbers)
   const getPageNumbers = () => {
@@ -224,8 +272,6 @@ const ViewUsers = () => {
             </div>
           </>
         )}
-        
-      
       </div>
     </div>
   );

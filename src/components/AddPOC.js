@@ -3,7 +3,6 @@ import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./styles/AddPOC.css";
 import createAuthenticatedAxios from "../createAuthenticatedAxios";
-  
 
 export default function AddPOC() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -22,22 +21,58 @@ export default function AddPOC() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const clientId = location.state?.clientId || null;
+  
+  // Initialize with the value from location or null
+  const [clientId, setClientId] = useState(() => {
+    if (location.state && location.state.clientId) {
+      return location.state.clientId;
+    }
+    
+    // Try to get from sessionStorage
+    try {
+      const storedClientId = sessionStorage.getItem('clientId');
+      return storedClientId ? JSON.parse(storedClientId) : null;
+    } catch (error) {
+      console.error("Failed to retrieve clientId from sessionStorage:", error);
+      return null;
+    }
+  });
+  
   const axiosInstance = createAuthenticatedAxios();
 
+  // Redirect if clientId isn't available
   useEffect(() => {
-    // Fetch departments dynamically
-    setIsLoading(true);
-    axiosInstance
-      .post("/api/departments", { clientId })
-      .then((response) => {
-        setDepartments(response.data);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching departments:", error);
-        setIsLoading(false);
-      });
+    if (!clientId) {
+      navigate('/', { replace: true });
+    }
+  }, [clientId, navigate]);
+
+  useEffect(() => {
+    // Fetch departments only when clientId is available and departments aren't loaded yet
+    if (clientId && departments.length === 0) {
+      setIsLoading(true);
+      axiosInstance
+        .post("/api/departments", { clientId })
+        .then((response) => {
+          setDepartments(response.data);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching departments:", error);
+          setIsLoading(false);
+        });
+    }
+  }, [clientId, departments.length, axiosInstance]);
+
+  // Save clientId to sessionStorage when it changes
+  useEffect(() => {
+    if (clientId) {
+      try {
+        sessionStorage.setItem('clientId', JSON.stringify(clientId));
+      } catch (error) {
+        console.error("Failed to save clientId to sessionStorage:", error);
+      }
+    }
   }, [clientId]);
 
   const validate = () => {
@@ -84,7 +119,16 @@ export default function AddPOC() {
         External_POC_ID: doctorDetails.externalPOCId || null,
       })
       .then((response) => {
-        setPocId(response.data.pocId);
+        const newPocId = response.data.pocId;
+        setPocId(newPocId);
+        
+        // Save to sessionStorage for persistence
+        try {
+          sessionStorage.setItem('pocId', JSON.stringify(newPocId));
+        } catch (error) {
+          console.error("Failed to save pocId to sessionStorage:", error);
+        }
+        
         setIsLoading(false);
         setCurrentStep(3);
       })
@@ -317,9 +361,15 @@ export default function AddPOC() {
                 <div className="text-center">
                   <button
                     className="btn btn-primary mt-3"
-                    onClick={() =>
-                      navigate("/update-schedule", { state: { pocId: pocId } })
-                    }
+                    onClick={() => {
+                      // Pass both pocId and clientId to maintain state persistence
+                      navigate("/update-schedule", { 
+                        state: { 
+                          pocId: pocId,
+                          clientId: clientId
+                        } 
+                      });
+                    }}
                   >
                     Update Schedule
                   </button>

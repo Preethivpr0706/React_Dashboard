@@ -1,192 +1,379 @@
-import React, { useState, useEffect } from "react";  
-import { useNavigate, useLocation } from "react-router-dom";  
-import axios from "axios";  
-import './styles/AddAppointment.css'
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import './styles/AddAppointment.css';
 import createAuthenticatedAxios from "../createAuthenticatedAxios";
-const AddNewAppointment = () => {  
-  const [currentStep, setCurrentStep] = useState(1);  
-  const [appointmentData, setAppointmentData] = useState({  
-   name: "",  
-   phone: "",  
-   email: "",  
-   location: "",  
-   type: "",  
-   department: "",  
-   doctor: "",  
-   date: "",  
-   time: "",  
-  });  
-  const [isConfirmed, setIsConfirmed] = useState(false);  
-  const [departments, setDepartments] = useState([]);  
-  const [pocs, setPocs] = useState([]);  
-  const [availableDates, setAvailableDates] = useState([]);  
-  const [availableTimes, setAvailableTimes] = useState([]);  
-  const [errors, setErrors] = useState({});  
-  const navigate = useNavigate();  
-  const location = useLocation();  
-  const clientId = location.state.clientId; 
-  const clientName = location.state?.clientName || null;
-  const [appointmentId, setAppointmentID] = useState(0);  
+import { useProtectedState } from "../StatePersistence";
 
+const AddNewAppointment = () => {
+  // Use protected state management for navigation data
+  const { isLoaded, state } = useProtectedState(useLocation(), ['clientId', 'clientName']);
+  const navigate = useNavigate();
+  
+  // Destructure state values once loaded
+  const clientId = isLoaded ? state.clientId : null;
+  const clientName = isLoaded ? state.clientName : null;
+  
+  // Regular component state
+  const [currentStep, setCurrentStep] = useState(1);
+  const [appointmentData, setAppointmentData] = useState({
+    name: "",
+    countryCode: "91", // Default country code for India
+    phone: "",
+    email: "",
+    location: "",
+    type: "",
+    department: "",
+    doctor: "",
+    date: "",
+    time: "",
+    paymentStatus: "", // Added payment status field
+  });
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [pocs, setPocs] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [appointmentId, setAppointmentID] = useState(0);
+  const [isPaid, setIsPaid] = useState(false); // Track if payment was made
+
+  // List of common country codes
+  const countryCodes = [
+    { code: "1", country: "United States/Canada" },
+    { code: "44", country: "United Kingdom" },
+    { code: "61", country: "Australia" },
+    { code: "91", country: "India" },
+    { code: "86", country: "China" },
+    { code: "49", country: "Germany" },
+    { code: "33", country: "France" },
+    { code: "81", country: "Japan" },
+    { code: "65", country: "Singapore" },
+    { code: "971", country: "UAE" },
+    { code: "92", country: "Pakistan" },
+    { code: "880", country: "Bangladesh" },
+    { code: "94", country: "Sri Lanka" },
+    { code: "977", country: "Nepal" },
+  ];
+
+  // Check if state is loaded, if not, redirect to home
   useEffect(() => {
-    // Set the background color when the component is mounted
-    document.body.style.background = "linear-gradient(135deg, #f5f7fa, #c3cfe2)";
+    if (!isLoaded) {
+      // Wait to ensure state isn't still loading
+      const timer = setTimeout(() => {
+        if (!isLoaded) {
+          navigate('/', { replace: true });
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded, navigate]);
 
-    // Cleanup when the component is unmounted or navigation happens
+  // Set background style
+  useEffect(() => {
+    document.body.style.background = "linear-gradient(135deg, #f5f7fa, #c3cfe2)";
     return () => {
       document.body.style.background = "";
     };
   }, []);
-  
-  useEffect(() => {  
-    const axiosInstance = createAuthenticatedAxios();
-    axiosInstance   
-    .post("/api/departments", { clientId })  
-    .then((response) => setDepartments(response.data))  
-    .catch((error) => console.error("Error fetching departments:", error));  
-  }, []);  
-  
-  const validateStep = () => {  
-   const stepErrors = {};  
-  
-   if (currentStep === 1) {  
-    if (!appointmentData.name) stepErrors.name = "Name is required.";  
-    if (!appointmentData.phone) stepErrors.phone = "Phone is required.";  
-    if (!appointmentData.email) stepErrors.email = "Email is required.";  
-    if (!appointmentData.location) stepErrors.location = "Location is required.";  
-   }  
-  
-   if (currentStep === 2) {  
-    if (!appointmentData.type) stepErrors.type = "Appointment type is required.";  
-   }  
-  
-   if (currentStep === 3) {  
-    if (!appointmentData.department) stepErrors.department = "Department is required.";  
-    if (!appointmentData.doctor) stepErrors.doctor = "Doctor is required.";  
-   }  
-  
-   if (currentStep === 4) {  
-    if (!appointmentData.date) stepErrors.date = "Date is required.";  
-    if (!appointmentData.time) stepErrors.time = "Time is required.";  
-   }  
-  
-   setErrors(stepErrors);  
-   return Object.keys(stepErrors).length === 0;  
-  };  
-  
-  const handleNext = () => {  
-   if (validateStep()) {  
-    setCurrentStep(currentStep + 1);  
-   }  
-  };  
-  
-  const handlePrevious = () => {  
-   setCurrentStep(currentStep - 1);  
-  };  
-  
-  const handleInputChange = (e) => {  
-   setAppointmentData({  
-    ...appointmentData,  
-    [e.target.name]: e.target.value,  
-   });  
-  };  
-  
-  const handleDepartmentChange = (e) => {  
-   const departmentId = e.target.value;  
-   setAppointmentData({  
-    ...appointmentData,  
-    department: departmentId,  
-    doctor: "",  
-   });  
-  
-   const axiosInstance = createAuthenticatedAxios();
-   axiosInstance   
-    .post("/api/pocs", { departmentId, clientId })  
-    .then((response) => setPocs(response.data))  
-    .catch((error) => console.error("Error fetching POCs:", error));  
-  };  
-  
-  const handleDoctorChange = (e) => {  
-   const pocId = e.target.value;  
-   setAppointmentData({  
-    ...appointmentData,  
-    doctor: pocId,  
-   });  
-  
-   const axiosInstance = createAuthenticatedAxios();
-   axiosInstance    
-    .post("/api/pocs/available-dates", { pocId })  
-    .then((response) => setAvailableDates(response.data))  
-    .catch((error) => console.error("Error fetching available dates:", error));  
-  };  
-  
-  const handleDateChange = (e) => {  
-   const selectedDate = e.target.value;  
-   setAppointmentData({  
-    ...appointmentData,  
-    date: selectedDate,  
-   });  
-  
-   const axiosInstance = createAuthenticatedAxios();
-   axiosInstance   
-    .post("/api/pocs/available-times", {  
-      pocId: appointmentData.doctor,  
-      date: selectedDate,   
-    })  
-    .then((response) => setAvailableTimes(response.data))  
-    .catch((error) => console.error("Error fetching available times:", error));  
-  };  
-  
-  const handleConfirm = () => { 
-    let phoneNumber = appointmentData.phone.replace(/\D/g, "");
 
-    if (!phoneNumber.startsWith("91")) {
-      if (phoneNumber.length === 10) {
-        phoneNumber = "91" + phoneNumber;
+  // Fetch departments when clientId is available
+  useEffect(() => {
+    if (!clientId) return;
+    
+    const fetchDepartments = async () => {
+      try {
+        const axiosInstance = createAuthenticatedAxios();
+        const response = await axiosInstance.post("/api/departments", { clientId });
+        setDepartments(response.data);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+
+    fetchDepartments();
+  }, [clientId]);
+
+  const validateStep = () => {
+    const stepErrors = {};
+
+    if (currentStep === 1) {
+      if (!appointmentData.name) stepErrors.name = "Name is required.";
+      if (!appointmentData.phone) {
+        stepErrors.phone = "Phone is required.";
+      } else if (!/^\d+$/.test(appointmentData.phone)) {
+        stepErrors.phone = "Phone number should contain only digits.";
+      } else if (appointmentData.phone.length !== 10) {
+        stepErrors.phone = "Phone number must be 10 digits.";
+      }
+      
+      if (!appointmentData.email) {
+        stepErrors.email = "Email is required.";
+      } else if (!/\S+@\S+\.\S+/.test(appointmentData.email)) {
+        stepErrors.email = "Please enter a valid email address.";
+      }
+      
+      if (!appointmentData.location) stepErrors.location = "Location is required.";
+    }
+
+    if (currentStep === 2) {
+      if (!appointmentData.type) stepErrors.type = "Appointment type is required.";
+    }
+
+    if (currentStep === 3) {
+      if (!appointmentData.department) stepErrors.department = "Department is required.";
+      if (!appointmentData.doctor) stepErrors.doctor = "Doctor is required.";
+    }
+
+    if (currentStep === 4) {
+      if (!appointmentData.date) stepErrors.date = "Date is required.";
+      if (!appointmentData.time) stepErrors.time = "Time is required.";
+    }
+
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep()) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Real-time validation for phone field
+    if (name === 'phone') {
+      // Only allow digits
+      const onlyDigits = value.replace(/\D/g, "");
+      
+      setAppointmentData({
+        ...appointmentData,
+        [name]: onlyDigits,
+      });
+      
+      // Clear error when typing
+      if (errors.phone) {
+        setErrors({
+          ...errors,
+          phone: ""
+        });
+      }
+    } else {
+      setAppointmentData({
+        ...appointmentData,
+        [name]: value,
+      });
+      
+      // Clear error when typing for other fields
+      if (errors[name]) {
+        setErrors({
+          ...errors,
+          [name]: ""
+        });
       }
     }
-    const axiosInstance = createAuthenticatedAxios();
-    axiosInstance  
-      .post("/api/users", {
+  };
+
+  const handleDepartmentChange = async (e) => {
+    const departmentId = e.target.value;
+    setAppointmentData({
+      ...appointmentData,
+      department: departmentId,
+      doctor: "",
+    });
+
+    try {
+      const axiosInstance = createAuthenticatedAxios();
+      const response = await axiosInstance.post("/api/pocs", { departmentId, clientId });
+      setPocs(response.data);
+    } catch (error) {
+      console.error("Error fetching POCs:", error);
+    }
+  };
+
+  const handleDoctorChange = async (e) => {
+    const pocId = e.target.value;
+    setAppointmentData({
+      ...appointmentData,
+      doctor: pocId,
+    });
+
+    try {
+      const axiosInstance = createAuthenticatedAxios();
+      const response = await axiosInstance.post("/api/pocs/available-dates", { pocId });
+      setAvailableDates(response.data);
+    } catch (error) {
+      console.error("Error fetching available dates:", error);
+    }
+  };
+
+  const handleDateChange = async (e) => {
+    const selectedDate = e.target.value;
+    setAppointmentData({
+      ...appointmentData,
+      date: selectedDate,
+    });
+
+    try {
+      const axiosInstance = createAuthenticatedAxios();
+      const response = await axiosInstance.post("/api/pocs/available-times", {
+        pocId: appointmentData.doctor,
+        date: selectedDate,
+      });
+      setAvailableTimes(response.data);
+    } catch (error) {
+      console.error("Error fetching available times:", error);
+    }
+  };
+
+  // Handle payment status selection
+  const handlePayment = (status) => {
+    setAppointmentData({
+      ...appointmentData,
+      paymentStatus: status
+    });
+    
+    // Create appointment with payment status
+    createAppointmentWithPayment(status);
+  };
+
+  // Create appointment with payment status
+  const createAppointmentWithPayment = async (paymentStatus) => {
+    let phoneNumber = appointmentData.phone.replace(/\D/g, "");
+    const countryCode = appointmentData.countryCode;
+    
+    // Format phone number with country code
+    const formattedPhone = countryCode + phoneNumber;
+
+    // Validate phone number
+    if (!phoneNumber || phoneNumber.length !== 10) {
+      console.error("Invalid phone number");
+      setErrors({
+        ...errors,
+        phone: "Phone number must be 10 digits"
+      });
+      setCurrentStep(1);
+      return;
+    }
+    
+    try {
+      const axiosInstance = createAuthenticatedAxios();
+      
+      // Create/update user
+      const userResponse = await axiosInstance.post("/api/users", {
         name: appointmentData.name,
-        phone: phoneNumber,
+        phone: formattedPhone,
         email: appointmentData.email,
         location: appointmentData.location,
         clientId: clientId,
-      })  
-      .then((response) => {  
-        const userId = response.data.userId;  
-    
-        return axiosInstance.post("/api/create-appointments", {  
-        userId: userId,  
-        pocId: appointmentData.doctor,  
-        date: appointmentData.date,  
-        time: appointmentData.time,  
-        type: appointmentData.type,  
-        clientId,  
-        });  
-      })  
-      .then((response) => {  
-        setAppointmentID(response.data.appointmentId); 
-        setIsConfirmed(true);  
-      })  
-      .catch((error) => console.error("Error confirming appointment:", error));  
-  };  
-  
-  const handleBackToDashboard = () => {  
-   navigate("/admin-dashboard", { state: { clientId, clientName } });  
-  };  
-  
- 
+      });
+      
+      const userId = userResponse.data.userId;
+      
+      // Create appointment
+      const appointmentResponse = await axiosInstance.post("/api/create-appointments", {
+        userId: userId,
+        pocId: appointmentData.doctor,
+        date: appointmentData.date,
+        time: appointmentData.time,
+        type: appointmentData.type,
+        paymentStatus: paymentStatus,
+        clientId,
+      });
+      
+      setAppointmentID(appointmentResponse.data.appointmentId);
+      setIsPaid(paymentStatus === "Paid");
+      setIsConfirmed(true);
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      alert("There was an error creating the appointment. Please try again.");
+    }
+  };
 
-  const departmentName =  
-   departments.find(  
-    (d) => String(d.departmentId) === String(appointmentData.department)  
-   )?.Value_name || "N/A";  
-  const pocName =  
-   pocs.find((p) => String(p.POC_ID) === String(appointmentData.doctor))  
-    ?.POC_Name || "N/A";  
+  const handleConfirm = () => {
+    // Validate all steps before proceeding to payment
+    let isValid = true;
+    
+    // Validate step 1 data
+    const step1Errors = {};
+    if (!appointmentData.name) {
+      step1Errors.name = "Name is required.";
+      isValid = false;
+    }
+    
+    if (!appointmentData.phone) {
+      step1Errors.phone = "Phone is required.";
+      isValid = false;
+    } else if (!/^\d+$/.test(appointmentData.phone)) {
+      step1Errors.phone = "Phone number should contain only digits.";
+      isValid = false;
+    } else if (appointmentData.phone.length !== 10) {
+      step1Errors.phone = "Phone number must be 10 digits.";
+      isValid = false;
+    }
+    
+    if (!appointmentData.email) {
+      step1Errors.email = "Email is required.";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(appointmentData.email)) {
+      step1Errors.email = "Please enter a valid email address.";
+      isValid = false;
+    }
+    
+    if (!appointmentData.location) {
+      step1Errors.location = "Location is required.";
+      isValid = false;
+    }
+    
+    // Validate step 2-4 data
+    if (!appointmentData.type) {
+      isValid = false;
+    }
+    
+    if (!appointmentData.department || !appointmentData.doctor) {
+      isValid = false;
+    }
+    
+    if (!appointmentData.date || !appointmentData.time) {
+      isValid = false;
+    }
+    
+    // If any errors in step 1, update errors and move to step 1
+    if (Object.keys(step1Errors).length > 0) {
+      setErrors(step1Errors);
+      setCurrentStep(1);
+      return;
+    }
+    
+    // If other errors, alert the user
+    if (!isValid) {
+      alert("Please complete all required fields before confirming.");
+      return;
+    }
+    
+    // If all valid, proceed to payment
+    setCurrentStep(6);
+  };
+
+  const handleBackToDashboard = () => {
+    navigate("/admin-dashboard", { state: { clientId, clientName } });
+  };
+
+  // Derived values
+  const departmentName = departments.find(
+    (d) => String(d.departmentId) === String(appointmentData.department)
+  )?.Value_name || "N/A";
   
+  const pocName = pocs.find(
+    (p) => String(p.POC_ID) === String(appointmentData.doctor)
+  )?.POC_Name || "N/A";
+
   // Function to generate step titles for the indicators
   const getStepTitle = (step) => {
     switch(step) {
@@ -195,9 +382,15 @@ const AddNewAppointment = () => {
       case 3: return "Provider";
       case 4: return "Timing";
       case 5: return "Confirm";
+      case 6: return "Payment";
       default: return "";
     }
   };
+
+  // Show loading state while state is loading
+  if (!isLoaded) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="appointment-container-add">
@@ -205,7 +398,7 @@ const AddNewAppointment = () => {
         <>
           <h2>Schedule Appointment</h2>
           <div className="step-indicator">
-            {[1, 2, 3, 4, 5].map((step) => (
+            {[1, 2, 3, 4, 5, 6].map((step) => (
               <div 
                 key={step} 
                 className={`step ${currentStep >= step ? "active" : ""}`}
@@ -232,14 +425,29 @@ const AddNewAppointment = () => {
           {errors.name && <span className="error-text">{errors.name}</span>}
 
           <label>Phone Number</label>
-          <input
-            type="text"
-            name="phone"
-            className="form-control"
-            placeholder="10-digit mobile number"
-            value={appointmentData.phone}
-            onChange={handleInputChange}
-          />
+          <div className="phone-input-container">
+            <select
+              name="countryCode"
+              className="country-code-select"
+              value={appointmentData.countryCode}
+              onChange={handleInputChange}
+            >
+              {countryCodes.map((country) => (
+                <option key={country.code} value={country.code}>
+                  +{country.code} ({country.country})
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              name="phone"
+              className="phone-input"
+              placeholder="10-digit mobile number"
+              value={appointmentData.phone}
+              onChange={handleInputChange}
+              maxLength={10}
+            />
+          </div>
           {errors.phone && <span className="error-text">{errors.phone}</span>}
 
           <label>Email Address</label>
@@ -362,7 +570,7 @@ const AddNewAppointment = () => {
           <div className="summary-section">
             <h3>Appointment Summary</h3>
             <p><strong>Patient:</strong> <span>{appointmentData.name}</span></p>
-            <p><strong>Contact:</strong> <span>{appointmentData.phone}</span></p>
+            <p><strong>Contact:</strong> <span>+{appointmentData.countryCode} {appointmentData.phone}</span></p>
             <p><strong>Email:</strong> <span>{appointmentData.email}</span></p>
             <p><strong>Location:</strong> <span>{appointmentData.location}</span></p>
             <p><strong>Appointment Type:</strong> <span>{appointmentData.type}</span></p>
@@ -377,6 +585,22 @@ const AddNewAppointment = () => {
         </div>
       )}
 
+      {currentStep === 6 && !isConfirmed && (
+        <div className="payment-options">
+          <h3>Payment Options</h3>
+          <p>Please select a payment option to complete the appointment booking:</p>
+          
+          <div className="payment-buttons">
+            <button className="btn btn-success" onClick={() => handlePayment("Paid")}>
+              Pay Now
+            </button>
+            <button className="btn btn-secondary" onClick={() => handlePayment("Pay_later")}>
+              Pay Later
+            </button>
+          </div>
+        </div>
+      )}
+
       {isConfirmed && (
         <div className="confirmation-screen">
           <div className="confirmation-checkmark"></div>
@@ -384,6 +608,11 @@ const AddNewAppointment = () => {
           <p>The appointment has been successfully scheduled.</p>
           <div className="confirmation-id">
             Appointment ID: {appointmentId}
+          </div>
+          <div className="payment-status">
+            Payment Status: <span className={isPaid ? "paid-status" : "pay-later-status"}>
+              {isPaid ? "Paid" : "Pay Later"}
+            </span>
           </div>
           <button className="btn btn-success" onClick={handleBackToDashboard}>
             Return to Dashboard
@@ -393,7 +622,7 @@ const AddNewAppointment = () => {
 
       {!isConfirmed && (
         <div className="navigation-buttons">
-          {currentStep > 1 && (
+          {currentStep > 1 && currentStep !== 6 && (
             <button className="btn btn-secondary" onClick={handlePrevious}>
               Back
             </button>
@@ -406,7 +635,7 @@ const AddNewAppointment = () => {
         </div>
       )}
     </div>
-  );    
-};  
-  
+  );
+};
+
 export default AddNewAppointment;

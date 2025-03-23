@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiClock, FiUser, FiCalendar, FiCheckCircle, FiXCircle, FiAlertCircle, FiMenu, FiX } from "react-icons/fi";
 import "../styles/TodaysAppointments.css";
-import authenticatedFetch from "../../authenticated Fetch";
+import authenticatedFetch from "../../authenticatedFetch";
 
 const TodaysAppointments = () => {
+    // Navigation and location setup
+    const navigate = useNavigate();
     const location = useLocation();
-    const pocId = location.state?.pocId;
+    
+    // Component state
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedTab, setSelectedTab] = useState("all");
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    
+    // Protected state
+    const [pocId, setPocId] = useState(null);
+    const [clientId, setClientId] = useState(null);
+    const [pocName, setPocName] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
+    // Page background setup
     useEffect(() => {
         document.body.className = "appointments-page-background";
         return () => {
@@ -22,8 +32,105 @@ const TodaysAppointments = () => {
         };
     }, []);
 
+    // Load state from location or sessionStorage
+    useEffect(() => {
+        const loadState = () => {
+            // First try to get state from location
+            if (location.state && location.state.pocId) {
+                setPocId(location.state.pocId);
+                setClientId(location.state.clientId || null);
+                setPocName(location.state.pocName || null);
+                
+                // Save to sessionStorage for persistence
+                try {
+                    sessionStorage.setItem('pocId', JSON.stringify(location.state.pocId));
+                    if (location.state.clientId) {
+                        sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+                    }
+                    if (location.state.pocName) {
+                        sessionStorage.setItem('pocName', JSON.stringify(location.state.pocName));
+                    }
+                } catch (error) {
+                    console.error("Failed to save state to sessionStorage:", error);
+                }
+                
+                setIsLoading(false);
+                return;
+            }
+            
+            // If not available in location, try sessionStorage
+            try {
+                const storedPocId = sessionStorage.getItem('pocId');
+                const storedClientId = sessionStorage.getItem('clientId');
+                const storedPocName = sessionStorage.getItem('pocName');
+                
+                if (storedPocId) {
+                    setPocId(JSON.parse(storedPocId));
+                    
+                    if (storedClientId) {
+                        setClientId(JSON.parse(storedClientId));
+                    }
+                    
+                    if (storedPocName) {
+                        setPocName(JSON.parse(storedPocName));
+                    }
+                    
+                    setIsLoading(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to retrieve state from sessionStorage:", error);
+            }
+            
+            // If we get here, we couldn't get state from either source
+            navigate('/', { replace: true });
+        };
+        
+        loadState();
+    }, [location, navigate]);
+
+    // Fetch clientId and POC name if not available
+    useEffect(() => {
+        const fetchClientId = async () => {
+            try {
+                const response = await authenticatedFetch('/api/getClientId', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pocId }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        setClientId(data[0].Client_ID);
+                        setPocName(data[0].POC_Name);
+                        
+                        // Save to sessionStorage for persistence
+                        try {
+                            sessionStorage.setItem('clientId', JSON.stringify(data[0].Client_ID));
+                            sessionStorage.setItem('pocName', JSON.stringify(data[0].POC_Name));
+                        } catch (error) {
+                            console.error("Failed to save client data to sessionStorage:", error);
+                        }
+                    } else {
+                        console.error("No clientId found");
+                    }
+                } else {
+                    console.error("Failed to fetch clientId");
+                }
+            } catch (error) {
+                console.error("Error fetching clientId:", error);
+            }
+        };
+    
+        if (pocId && !clientId) fetchClientId();
+    }, [pocId, clientId]);
+
+    // Fetch appointments data after state is loaded
     useEffect(() => {
         const fetchTodaysAppointments = async () => {
+            if (!pocId) return;
+            
+            setLoading(true);
             try {
                 const response = await authenticatedFetch("/api/poc/todays-appointments", {
                     method: "POST",
@@ -44,8 +151,10 @@ const TodaysAppointments = () => {
             }
         };
 
-        fetchTodaysAppointments();
-    }, [pocId]);
+        if (!isLoading) {
+            fetchTodaysAppointments();
+        }
+    }, [pocId, isLoading]);
 
     const updateStatus = async (appointmentId, newStatus, previousStatus) => {
         const confirmUpdate = window.confirm(`Are you sure you want to mark this appointment as ${newStatus}?`);
@@ -173,6 +282,11 @@ const TodaysAppointments = () => {
     const closeSidebar = () => {
         setSidebarOpen(false);
     };
+
+    // Show loading if we're still waiting for state to be loaded
+    if (isLoading) {
+        return <div className="loading">Loading...</div>;
+    }
 
     return (
         <div className="appointments-container">

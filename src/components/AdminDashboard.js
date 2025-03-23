@@ -14,33 +14,8 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/AdminDashboard.css";
+import authenticatedFetch from "../authenticatedFetch";
 
-// Utility function for authenticated API requests
-const authenticatedFetch = async (url, options = {}) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': token, // Token already includes Bearer prefix
-    },
-  });
-  
-  if (!response.ok) {
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/'; // Force redirect to login
-      throw new Error('Unauthorized - Session expired');
-    }
-    throw new Error(`Request failed with status: ${response.status}`);
-  }
-  
-  return response;
-};
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,11 +27,54 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const clientId = location.state?.clientId;
-  const clientName = location.state?.clientName;
-
   const sidebarRef = useRef(null);
   const toggleButtonRef = useRef(null);
+   // State for protected data
+   const [clientId, setClientId] = useState(null);
+   const [clientName, setClientName] = useState(null);
+   const [isLoading, setIsLoading] = useState(true);
+   
+   // Load state from location or sessionStorage
+   useEffect(() => {
+     const loadState = () => {
+       // First try to get state from location
+       if (location.state && location.state.clientId && location.state.clientName) {
+         setClientId(location.state.clientId);
+         setClientName(location.state.clientName);
+         
+         // Save to sessionStorage for persistence
+         try {
+           sessionStorage.setItem('clientId', JSON.stringify(location.state.clientId));
+           sessionStorage.setItem('clientName', JSON.stringify(location.state.clientName));
+         } catch (error) {
+           console.error("Failed to save state to sessionStorage:", error);
+         }
+         
+         setIsLoading(false);
+         return;
+       }
+       
+       // If not available in location, try sessionStorage
+       try {
+         const storedClientId = sessionStorage.getItem('clientId');
+         const storedClientName = sessionStorage.getItem('clientName');
+         
+         if (storedClientId && storedClientName) {
+           setClientId(JSON.parse(storedClientId));
+           setClientName(JSON.parse(storedClientName));
+           setIsLoading(false);
+           return;
+         }
+       } catch (error) {
+         console.error("Failed to retrieve state from sessionStorage:", error);
+       }
+       
+       // If we get here, we couldn't get state from either source
+       navigate('/', { replace: true });
+     };
+     
+     loadState();
+   }, [location, navigate]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

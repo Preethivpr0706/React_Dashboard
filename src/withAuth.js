@@ -1,60 +1,121 @@
-// withAuth.js
+// withRoleAuth.js
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import authenticatedFetch from './authenticatedFetch';
 
-const withAuth = (WrappedComponent) => {
-  const AuthenticatedComponent = () => {
+const withAuth = (WrappedComponent, requiredRole, requiredStateKeys = []) => {
+  const AuthenticatedComponent = (props) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
-
+    const [userRole, setUserRole] = useState(null);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+    const location = useLocation();
+    
+    // State for required data
+    const [stateData, setStateData] = useState({});
+    const [hasRequiredState, setHasRequiredState] = useState(requiredStateKeys.length === 0);
+    const [isLoadingState, setIsLoadingState] = useState(requiredStateKeys.length > 0);
+    
+    // First effect: Check authentication
     useEffect(() => {
-      const checkAuthentication = () => {
-        const token = localStorage.getItem('token');
-        console.log('Checking authentication - Token:', token);
-
-        if (token) {
-          try {
-            // Optionally, validate token expiration
-            const tokenParts = token.split('.');
-            if (tokenParts.length === 3) {
-              const payload = JSON.parse(atob(tokenParts[1]));
-              const currentTime = Math.floor(Date.now() / 1000);
-              
-              console.log('Token payload:', payload);
-              console.log('Current time:', currentTime);
-              console.log('Token expiration:', payload.exp);
-
-              if (payload.exp > currentTime) {
-                setIsAuthenticated(true);
-                return;
-              }
-            }
-          } catch (error) {
-            console.error('Token validation error:', error);
+      const checkAuthentication = async () => {
+        try {
+          console.log('Sending authentication validation request...');
+          const response = await authenticatedFetch('/api/auth/validate');
+          
+          if (response.status === 200) {
+            const data = await response.json();
+            setUserRole(data.user.role);
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
           }
+        } catch (error) {
+          console.error('Authentication validation error:', error);
+          setIsAuthenticated(false);
+        } finally {
+          setIsLoadingAuth(false);
         }
-        
-        // If no valid token found
-        setIsAuthenticated(false);
-        localStorage.removeItem('token');
       };
-
+    
       checkAuthentication();
     }, []);
 
-    // Render nothing while checking authentication
-    if (isAuthenticated === null) {
+    // Second effect: Load required state data
+    useEffect(() => {
+      if (requiredStateKeys.length === 0) {
+        setIsLoadingState(false);
+        return;
+      }
+      
+      // First check location state
+      if (location.state && requiredStateKeys.every(key => location.state[key] !== undefined)) {
+        setStateData(location.state);
+        setHasRequiredState(true);
+        setIsLoadingState(false);
+        
+        // Save to session storage for persistence
+        try {
+          requiredStateKeys.forEach(key => {
+            sessionStorage.setItem(key, JSON.stringify(location.state[key]));
+          });
+        } catch (error) {
+          console.error("Failed to save state to sessionStorage:", error);
+        }
+        return;
+      }
+      
+      // If not in location state, try sessionStorage
+      try {
+        const sessionState = {};
+        let allKeysFound = true;
+        
+        requiredStateKeys.forEach(key => {
+          const item = sessionStorage.getItem(key);
+          if (item) {
+            sessionState[key] = JSON.parse(item);
+          } else {
+            allKeysFound = false;
+          }
+        });
+        
+        if (allKeysFound) {
+          setStateData(sessionState);
+          setHasRequiredState(true);
+        } else {
+          setHasRequiredState(false);
+        }
+      } catch (error) {
+        console.error("Failed to retrieve state from sessionStorage:", error);
+        setHasRequiredState(false);
+      } finally {
+        setIsLoadingState(false);
+      }
+    }, [location, requiredStateKeys]);
+
+    // Show loading while we're determining auth and state
+    if (isLoadingAuth || isLoadingState) {
       return <div>Loading...</div>;
     }
 
-    // Redirect to login if not authenticated
-    if (isAuthenticated === false) {
-      console.log('Redirecting to login page');
+    // Not authenticated - redirect to login
+    if (!isAuthenticated) {
       return <Navigate to="/" replace />;
     }
 
-    // Render the wrapped component if authenticated
-    console.log('Rendering authenticated component');
-    return <WrappedComponent />;
+    // Not authorized for this role - redirect to appropriate dashboard
+    if (requiredRole && userRole !== requiredRole) {
+      const redirectPath = userRole === 'admin' ? '/admin-dashboard' : '/poc-dashboard';
+      return <Navigate to={redirectPath} replace />;
+    }
+
+    // Missing required state - redirect to appropriate dashboard
+    if (!hasRequiredState) {
+      const redirectPath = userRole === 'admin' ? '/admin-dashboard' : '/poc-dashboard';
+      return <Navigate to={redirectPath} replace />;
+    }
+
+    // All checks passed - render the component with combined props
+    return <WrappedComponent {...props} {...stateData} />;
   };
 
   return AuthenticatedComponent;
