@@ -17,28 +17,34 @@ async function matchLoginCredentials(req, res) {
 
     try {
         if (role === 'admin') {
-            // Check admin credentials
+            // Fetch admin details from the database
             const [admin] = await pool.execute(
-                "SELECT * FROM client WHERE Admin_Email = ? AND Admin_Password = ? AND Client_ID = ?", [email, password, clientId]
+                "SELECT Admin_Password, Client_Name FROM client WHERE Admin_Email = ? AND Client_ID = ?", [email, clientId]
             );
 
             if (admin.length === 0) {
                 return res.status(401).json({ success: false, message: 'Invalid email or password.' });
             }
 
+            const storedPassword = admin[0].Admin_Password;
+
+            // **Directly compare the passwords since admin passwords are not hashed**
+            if (password !== storedPassword) {
+                return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+            }
+
             const token = jwt.sign({ clientId, role }, process.env.SECRET_KEY, { expiresIn: '1h' });
 
-            // In matchLoginCredentials function
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // Only use secure in production
-                sameSite: 'Lax' // Use 'Lax' in development, 'Strict' in production
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax'
             });
 
             return res.json({ success: true, message: 'Login successful!', clientId, clientName: admin[0].Client_Name });
         }
 
-        // Check POC credentials
+        // Check POC credentials (with hashed password comparison)
         const [rows] = await pool.execute('SELECT POC_ID, Password FROM poc WHERE Email = ?', [email]);
 
         if (rows.length === 0) {
@@ -48,7 +54,7 @@ async function matchLoginCredentials(req, res) {
         const pocId = rows[0].POC_ID;
         const hashedPassword = rows[0].Password;
 
-        // Compare the provided password with the hashed password
+        // Compare entered password with the hashed password for POC users
         const isValidPassword = await bcrypt.compare(password, hashedPassword);
 
         if (!isValidPassword) {
@@ -88,6 +94,43 @@ async function getClients(req, res) {
     }
 }
 
+async function contactMails(req, res) {
+    // Create a transporter using SMTP
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com', // Replace with your SMTP host
+        port: 587,
+        secure: false, // Use TLS
+        auth: {
+            user: 'preethivpr0706@gmail.com',
+            pass: 'rgtpjumiiztkbktn', // App password    
+        }
+    });
+
+    const { name, email, message } = req.body;
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER, // Sender address
+        to: 'harishradhakrishnan2001@gmail.com', // Recipient address
+        subject: `New Contact Form Submission from ${name}`,
+        html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    };
+
+    try {
+        // Send email
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: 'Message sent successfully' });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ message: 'Failed to send message' });
+    }
+
+}
 async function verifyPOCEmail(req, res) {
     const { clientId, email } = req.body;
 
@@ -124,8 +167,28 @@ async function verifyPOCEmail(req, res) {
 
         await transporter.sendMail({
             to: email,
-            subject: 'Email Verification',
-            html: `<p>Please click <a href="${verificationLink}">here</a> to verify your email. </p> <p>Link will be expired after a hour.</p>`,
+            subject: 'Verify your email',
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Email Verification</h2>
+            <p>Hello,</p>
+            <p>Please verify your email address by clicking the button below:</p>
+            <p style="margin: 25px 0;">
+                <a href="${verificationLink}" 
+                   style="background-color: #4CAF50; color: white; padding: 10px 20px; 
+                          text-decoration: none; border-radius: 5px;">
+                    Verify Email Address
+                </a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all;">${verificationLink}</p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+            <hr>
+            <p>© ${new Date().getFullYear()} Your Company. All rights reserved.</p>
+        </div>
+    `,
+            text: `Please verify your email by visiting this link: ${verificationLink}\n\nThis link will expire in 1 hour.`
         });
 
         res.json({ success: true, message: 'Verification email sent successfully. Please check your email.' });
@@ -1284,5 +1347,6 @@ module.exports = {
     adminAppointmentDetails,
     updateProfileImage,
     fetchPOCImage,
-    logout
+    logout,
+    contactMails,
 };

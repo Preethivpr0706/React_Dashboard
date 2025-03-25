@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
 import '../styles/AvailabilityManager.css';
-import BackButtonPOC from './BackButtonPOC';
 import authenticatedFetch from '../../authenticatedFetch';
 
 const AvailabilityManager = () => {
@@ -243,10 +242,6 @@ const AvailabilityManager = () => {
       });
   };
 
-  const handleBackButton = () => {  
-    navigate("/doctor-dashboard", { state: { pocId, clientId, pocName } });  
-  };
-  
   // Format date for display
   const formatDateDisplay = (dateString) => {
     if (!dateString) return '';
@@ -275,7 +270,6 @@ const AvailabilityManager = () => {
   return (
     <div className="availability-page">
       <div className="availability-header">
-        <BackButtonPOC onClick={handleBackButton} />
         <h1 className="availability-title">Manage Availability</h1>
       </div>
       

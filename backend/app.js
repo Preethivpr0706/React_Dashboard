@@ -3,13 +3,13 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const pocRoutes = require('./routes/pocRoutes');
 const authMiddleware = require('./routes/authMiddleware');
-const { matchLoginCredentials, logout, verifyEmail, verifyPOCEmail, updatePassword, requestPasswordReset, resetPassword } = require('./controllers/pocController');
+const { matchLoginCredentials, logout, verifyEmail, verifyPOCEmail, updatePassword, requestPasswordReset, resetPassword, contactMails } = require('./controllers/pocController');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 
-// Enable CORS with credentials support
+// Enable CORS with credentiapls support
 app.use(cors({
     origin: 'http://localhost:3000', // Replace with actual frontend URL
     credentials: true // Allow cookies
@@ -44,6 +44,7 @@ app.use((req, res, next) => {
 // Authentication Routes
 app.post('/api/poc-login', matchLoginCredentials);
 app.post('/api/logout', logout);
+app.post('/api/contact', contactMails);
 
 app.post('/api/clients', (req, res) => {
     // Call the getClients function without authentication
@@ -65,7 +66,7 @@ app.use('/api', authMiddleware, pocRoutes);
 
 
 // Additional route to verify image accessibility
-app.get('/check-image-path', (req, res) => {
+app.get('/api/check-image-path', (req, res) => {
     const imagePath = req.query.path;
     if (!imagePath) {
         return res.status(400).json({ exists: false, error: 'No path provided' });

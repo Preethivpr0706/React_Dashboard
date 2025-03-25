@@ -30,6 +30,9 @@ import ViewUsers from "./components/ViewUsers";
 import TodaysAppointmentsAdmin from "./components/TodaysAppointmentsAdmin";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import TermsOfService from "./components/TermsOfService";
+import HomePage from "./components/HomePage";
+import WhatsappBot from "./components/WhatsappBot";
+import { HelmetProvider } from 'react-helmet-async';
 
 const AuthenticatedAdminDashboard = withAuth(AdminDashboard);
 const AuthenticatedViewPOC = withAuth(ViewPOC);
@@ -54,6 +57,7 @@ const AuthenticatedTodaysAppointmentsAdmin = withAuth(TodaysAppointmentsAdmin);
 
 const App = () => {
   return (
+    <HelmetProvider>
     <Router>
       <div>
         <Routes>
@@ -66,6 +70,8 @@ const App = () => {
           <Route path="/reset-password/:token/:pocId" element={<ResetPasswordPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/chatbot" element={<WhatsappBot />} />
 
           {/* Protected routes */}
           <Route path="/admin-dashboard" element={<AuthenticatedAdminDashboard />} />
@@ -91,6 +97,7 @@ const App = () => {
         </Routes>
       </div>
     </Router>
+    </HelmetProvider>
   );
 };
 

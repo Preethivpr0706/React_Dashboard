@@ -15,7 +15,7 @@ const LoginPage = () => {
     
   const handleLogin = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/poc-login", {
+      const response = await fetch("/api/poc-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // Include cookies in the request
@@ -44,7 +44,7 @@ const LoginPage = () => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/clients", {
+        const response = await fetch("/api/clients", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",

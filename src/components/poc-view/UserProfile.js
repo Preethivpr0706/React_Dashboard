@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/UserProfile.css';
-import BackButtonPOC from './BackButtonPOC';
 import { FaUser, FaUpload, FaCalendarAlt, FaUserMd, FaStar, FaCommentDots } from 'react-icons/fa';
 import createAuthenticatedAxios from '../../createAuthenticatedAxios';
 
@@ -100,7 +99,7 @@ const UserProfile = () => {
           
           // Debug: Check if image exists on server
           try {
-            const imageCheckResult = await axiosInstance.get(`/check-image-path?path=${doctorResponse.data.profile_image}`);
+            const imageCheckResult = await axiosInstance.get(`/api/check-image-path?path=${doctorResponse.data.profile_image}`);
             console.log("Image path check:", imageCheckResult.data);
           } catch (err) {
             console.error("Error checking image:", err);
@@ -119,9 +118,6 @@ const UserProfile = () => {
     fetchData();
   }, [pocId, stateLoaded]); // Only depends on pocId and stateLoaded
 
-  const handleBackButton = () => {  
-    navigate("/back-button", { state: { pocId, clientId, pocName } });  
-  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -224,7 +220,6 @@ const renderProfileImage = () => {
 
   return (
     <div className="user-profile-page">
-      <BackButtonPOC onClick={handleBackButton}/>
       
       <div className="user-profile">
         <div className="user-profile__container">

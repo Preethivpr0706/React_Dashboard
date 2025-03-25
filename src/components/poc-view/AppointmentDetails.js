@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";  
 import { useLocation, useNavigate } from "react-router-dom";  
 import "../styles/AppointmentDetails.css";  
-import BackButtonPOC from "./BackButtonPOC";  
 import authenticatedFetch from "../../authenticatedFetch";
   
 const AppointmentDetails = () => {  
@@ -144,9 +143,6 @@ const AppointmentDetails = () => {
     }
   }, [pocId, status, type, isLoading]);
   
-  const handleBackButton = () => {  
-    navigate("/doctor-dashboard", { state: { pocId, clientId, pocName } });  
-  };  
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -180,7 +176,6 @@ const AppointmentDetails = () => {
   return (  
     <div className="appointment-details-page">
       <div className="appointment-details-header">
-        <BackButtonPOC onClick={handleBackButton} />
         <h1 className="appointment-details-title">Appointment Details</h1>
       </div>
       

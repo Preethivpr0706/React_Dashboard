@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const createAuthenticatedAxios = () => {
     const instance = axios.create({
-        baseURL: 'http://localhost:5000', // Ensure this matches your backend URL
+        //baseURL: 'http://localhost:5000', // Ensure this matches your backend URL
         withCredentials: true, // Enable cookies in requests
         headers: {
             'Content-Type': 'application/json',
