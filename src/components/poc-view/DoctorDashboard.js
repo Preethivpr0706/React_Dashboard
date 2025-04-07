@@ -128,7 +128,9 @@ const DoctorDashboard = () => {
   const handleMeetLink = () => navigate("/meet-link", { state: { pocId, clientId, pocName } });
   const handleFees = () => navigate("/fees", { state: { pocId, clientId, pocName } });
   const handleLogout = () => navigate("/logout");
-  const handleContactSupport = () => navigate("/contact-support", { state: { pocId, clientId, pocName } });
+  const handleContactSupport =() =>{
+    navigate("/home");
+  }
 
   // Fetch appointment counts
   useEffect(() => {

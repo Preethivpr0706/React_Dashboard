@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Clock, User, Grid, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, User, Grid, CheckCircle, XCircle, AlertTriangle, List, X, ChevronDown  } from 'lucide-react';
 import createAuthenticatedAxios from '../createAuthenticatedAxios';
+import './styles/UpdateAvailability.css'; // Make sure CSS is imported
 
-// Custom hook for persistent state
 const useProtectedState = (key, initialValue) => {
-  // Initialize state using sessionStorage if available, otherwise use initialValue
   const [value, setValue] = useState(() => {
     try {
       const storedValue = sessionStorage.getItem(key);
@@ -16,7 +15,6 @@ const useProtectedState = (key, initialValue) => {
     }
   });
 
-  // Update sessionStorage when the state changes
   useEffect(() => {
     try {
       if (value !== null && value !== undefined) {
@@ -31,12 +29,9 @@ const useProtectedState = (key, initialValue) => {
 };
 
 const UpdateAvailability = () => {
-  // Use protected state for persistent values across navigation
   const [pocId, setPocId] = useProtectedState('pocId', null);
   const [clientId, setClientId] = useProtectedState('clientId', null);
   const [pocName, setPocName] = useProtectedState('pocName', null);
-  
-  // Local component state
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -49,15 +44,28 @@ const UpdateAvailability = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [reason, setReason] = useState('');
+  const [activeTab, setActiveTab] = useState('update');
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [expandedBlockedDates, setExpandedBlockedDates] = useState({}); // Changed to object for multiple expanded items
+  // Add this state at the component level
+const [expandedDates, setExpandedDates] = useState({});
+
+// Add this toggle function
+const toggleDateExpansion = (date) => {
+  setExpandedDates(prev => ({
+    ...prev,
+    [date]: !prev[date]
+  }));
+};
+
   
   const navigate = useNavigate();
   const location = useLocation();
   const axiosInstance = createAuthenticatedAxios();
-  
-  // Initialize state from router location or session storage
+
   useEffect(() => {
     const loadState = () => {
-      // First try to get state from location
       if (location.state) {
         if (location.state.pocId) setPocId(location.state.pocId);
         if (location.state.clientId) setClientId(location.state.clientId);
@@ -67,7 +75,6 @@ const UpdateAvailability = () => {
         return;
       }
       
-      // If we don't have clientId in our state, redirect to home
       if (!clientId) {
         navigate('/', { replace: true });
       }
@@ -77,17 +84,13 @@ const UpdateAvailability = () => {
   }, [location, navigate, setPocId, setClientId, setPocName, clientId]);
 
   useEffect(() => {
-    // Set the background color when the component is mounted
     document.body.style.background = "linear-gradient(135deg, #6e8efb, #a777e3)";
-  
-    // Cleanup when the component is unmounted or navigation happens
     return () => {
       document.body.style.background = "";
     };
   }, []);
     
   useEffect(() => {
-    // Fetch departments when clientId is available
     if (clientId) {
       setIsLoading(true);
       axiosInstance
@@ -108,31 +111,75 @@ const UpdateAvailability = () => {
    
   useEffect(() => {
     if (selectedDoctor) {
-      setIsLoading(true);
-      axiosInstance
-        .post("/api/pocs/available-dates-update", { pocId: selectedDoctor.POC_ID })
-        .then((response) => response.data)
-        .then((data) => {
-          setAvailableDates(data.map((date) => ({ 
-            Schedule_Date: date.Schedule_Date, 
-            active_status: date.active_status 
-          })));
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Error fetching available dates:', error);
-          setIsLoading(false);
-          setMessage('Error fetching available dates.');
-          setMessageType('error');
-        });
+      fetchAvailableDates();
+      fetchBlockedSlots();
     }
   }, [selectedDoctor]);
+
+  const fetchAvailableDates = () => {
+    setIsLoading(true);
+    axiosInstance
+      .post("/api/pocs/available-dates-update", { pocId: selectedDoctor.POC_ID })
+      .then((response) => response.data)
+      .then((data) => {
+        setAvailableDates(data.map((date) => ({ 
+          Schedule_Date: date.Schedule_Date, 
+          active_status: date.active_status 
+        })));
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching available dates:', error);
+        setIsLoading(false);
+        setMessage('Error fetching available dates.');
+        setMessageType('error');
+      });
+  };
+
+  const fetchBlockedSlots = () => {
+    axiosInstance
+      .post("/api/pocs/blocked-slots", { pocId: selectedDoctor.POC_ID })
+      .then((response) => response.data)
+      .then((data) => {
+        const groupedByDate = data.reduce((acc, slot) => {
+          const date = slot.schedule_date;
+          if (!acc[date]) {
+            acc[date] = {
+              total: 0,
+              blocked: 0,
+              blockedSlots: []
+            };
+          }
+          acc[date].total += 1;
+          if (slot.Active_Status === 'blocked') {
+            acc[date].blocked += 1;
+            acc[date].blockedSlots.push(slot);
+          }
+          return acc;
+        }, {});
   
-  // NEW EFFECT: Fetch timings whenever selected date, doctor or availability mode changes
+        const groupedArray = Object.entries(groupedByDate)
+          .filter(([_, { blocked }]) => blocked > 0) // only dates with at least one blocked slot
+          .map(([date, { total, blocked, blockedSlots }]) => {
+            const type = blocked === total ? 'full' : 'partial';
+            return {
+              date,
+              slots: blockedSlots.sort((a, b) => a.start_time.localeCompare(b.start_time)),
+              type
+            };
+          });
+  
+        setBlockedSlots(groupedArray);
+      })
+      .catch((error) => {
+        console.error('Error fetching blocked slots:', error);
+      });
+  };
+  
+  
   useEffect(() => {
-    // Only fetch timings if we have a doctor, date, and partial availability is selected
     if (selectedDoctor && selectedDate && availability === 'partial') {
-      setTimings([]); // Clear previous timings
+      setTimings([]);
       setIsLoading(true);
       
       axiosInstance
@@ -165,7 +212,6 @@ const UpdateAvailability = () => {
    
     if (departmentId) {
       setIsLoading(true);
-      // Fetch doctors for the selected department
       axiosInstance
         .post("/api/pocs", { departmentId, clientId })
         .then((response) => response.data)
@@ -199,27 +245,133 @@ const UpdateAvailability = () => {
   const handleAvailabilityChange = (e) => {
     setAvailability(e.target.value);
     if (e.target.value === 'partial') {
-      setSelectedTimings([]); // Reset selected timings when switching to partial
+      setSelectedTimings([]);
     }
     setMessage('');
   };
    
   const handleDateTileClick = (dateObj) => {
-    if (dateObj.active_status === 'blocked') return;
+    if (dateObj.active_status === 'blocked') {
+      // Handle unblocking a blocked date
+      if (window.confirm("Do you want to unblock this date?")) {
+        unblockSlot(dateObj.Schedule_Date);
+      }
+      return;
+    }
     
     setSelectedDate(dateObj.Schedule_Date);
     setMessage('');
-    // The useEffect will handle fetching timings when needed
   };
     
   const handleTimingClick = (timing) => {
-    if (timing.active_status === 'blocked') return;
+    if (timing.active_status === 'blocked') {
+      // Handle unblocking a blocked timing
+      if (window.confirm("Do you want to unblock this time slot?")) {
+        unblockTimingSlot(timing.appointment_time);
+      }
+      return;
+    }
     
     setSelectedTimings((prev) => {
       return prev.includes(timing.appointment_time)
         ? prev.filter((t) => t !== timing.appointment_time)
         : [...prev, timing.appointment_time];
     });
+  };
+
+  const unblockSlot = (date) => {
+    if (!selectedDoctor || !selectedDoctor.POC_ID || !date) {
+      setMessage('Missing required information for unblocking');
+      setMessageType('error');
+      return;
+    }
+    
+    setIsLoading(true);
+    axiosInstance
+      .post("/api/pocs/unblock-slot", {
+        pocId: selectedDoctor.POC_ID,
+        date
+      })
+      .then(() => {
+        setMessage("Slot unblocked successfully.");
+        setMessageType('success');
+        fetchAvailableDates();
+        fetchBlockedSlots();
+      })
+      .catch((error) => {
+        console.error('Error unblocking slot:', error);
+        setMessage('Error unblocking slot.');
+        setMessageType('error');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  const unblockTimingSlot = (time) => {
+    if (!selectedDoctor || !selectedDoctor.POC_ID || !selectedDate || !time) {
+      setMessage('Missing required information for unblocking');
+      setMessageType('error');
+      return;
+    }
+    setIsLoading(true);
+    axiosInstance
+      .post("/api/pocs/unblock-slot", {
+        pocId: selectedDoctor.POC_ID,
+        date: selectedDate,
+        time
+      })
+      .then(() => {
+        setMessage("Time slot unblocked successfully.");
+        setMessageType('success');
+        // Refresh timings and blocked slots
+        axiosInstance
+          .post("/api/pocs/available-times-update", { 
+            pocId: selectedDoctor.POC_ID, 
+            date: selectedDate 
+          })
+          .then((response) => response.data)
+          .then((data) => {
+            setTimings(data);
+          });
+        fetchBlockedSlots();
+      })
+      .catch((error) => {
+        console.error('Error unblocking time slot:', error);
+        setMessage('Error unblocking time slot.');
+        setMessageType('error');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  const handleUnblockSlot = (slotId) => {
+    if (!slotId) {
+      setMessage('Invalid slot ID');
+      setMessageType('error');
+      return;
+    }
+    
+    if (window.confirm("Do you want to unblock this slot?")) {
+      setIsLoading(true);
+      axiosInstance
+        .post("/api/pocs/unblock-slot-by-id", { slotId })
+        .then(() => {
+          setMessage("Slot unblocked successfully.");
+          setMessageType('success');
+          fetchAvailableDates();
+          fetchBlockedSlots();
+        })
+        .catch((error) => {
+          console.error('Error unblocking slot:', error);
+          setMessage('Error unblocking slot.');
+          setMessageType('error');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
   };
    
   const handleUpdateAvailability = () => {
@@ -241,6 +393,7 @@ const UpdateAvailability = () => {
       pocId: selectedDoctor.POC_ID,
       date: selectedDate,
       timings: availability === 'partial' ? selectedTimings : [],
+      reason
     };
     
     axiosInstance
@@ -250,19 +403,23 @@ const UpdateAvailability = () => {
         if (response.status === 200) {
           setMessage("Doctor's availability has been updated successfully.");
           setMessageType('success');
+          setReason('');
           
-          // Refresh available dates
-          if (selectedDoctor) {
+          // Refresh data
+          fetchAvailableDates();
+          fetchBlockedSlots();
+          
+          // Refresh timings if partial
+          if (availability === 'partial') {
             axiosInstance
-              .post("/api/pocs/available-dates-update", { pocId: selectedDoctor.POC_ID })
+              .post("/api/pocs/available-times-update", { 
+                pocId: selectedDoctor.POC_ID, 
+                date: selectedDate 
+              })
               .then((response) => response.data)
               .then((data) => {
-                setAvailableDates(data.map((date) => ({ 
-                  Schedule_Date: date.Schedule_Date, 
-                  active_status: date.active_status 
-                })));
-              })
-              .catch((error) => console.error('Error refreshing dates:', error));
+                setTimings(data);
+              });
           }
         } else {
           setMessage('Error updating availability.');
@@ -277,14 +434,19 @@ const UpdateAvailability = () => {
       });
   };
 
-  // Format date for better display
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // Get status text
+  const formatDateTimeDisplay = (dateStr, timeStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return timeStr ? `${formattedDate} at ${timeStr}` : formattedDate;
+  };
+
   const getStatusText = (status) => {
     switch(status) {
       case 'blocked': return 'Blocked';
@@ -293,7 +455,14 @@ const UpdateAvailability = () => {
     }
   };
 
-  // If no clientId and not loading state, show a message or redirect
+  // New function to toggle expand/collapse of blocked date tiles
+  const toggleExpandBlockedDate = (date) => {
+    setExpandedBlockedDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
+
   if (!clientId && !isLoading) {
     return (
       <div className="availability-page">
@@ -372,153 +541,264 @@ const UpdateAvailability = () => {
             </div>
           </div>
           
-          {/* Date Selection Section */}
           {selectedDoctor && (
-            <div className="availability-section">
-              <h2 className="availability-section-title">Select Date</h2>
-              <p className="availability-section-desc">
-                Choose a date to update {selectedDoctor.POC_Name}'s availability
-              </p>
-              
-              <div className="dates-legend">
-                <div className="legend-item">
-                  <span className="legend-color available"></span>
-                  <span className="legend-text">Available</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color partial"></span>
-                  <span className="legend-text">Partially Available</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color blocked"></span>
-                  <span className="legend-text">Fully Blocked</span>
-                </div>
+            <div className="tabs-container">
+              <div className="tabs-header">
+                <button
+                  className={`tab-button ${activeTab === 'update' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('update')}
+                >
+                  Update Slots
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'blocked' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('blocked')}
+                >
+                  Blocked Slots
+                </button>
               </div>
               
-              <div className="dates-container">
-                {availableDates.length > 0 ? (
-                  <div className="dates-grid">
-                    {availableDates.map((dateObj) => (
-                      <div
-                        key={dateObj.Schedule_Date}
-                        className={`date-tile ${dateObj.active_status} ${selectedDate === dateObj.Schedule_Date ? 'selected' : ''}`}
-                        onClick={() => handleDateTileClick(dateObj)}
-                      >
-                        <span className="date-display">{formatDateDisplay(dateObj.Schedule_Date)}</span>
-                        <span className="date-status">{getStatusText(dateObj.active_status)}</span>
+              <div className="tabs-content">
+                {activeTab === 'update' ? (
+                  <>
+                    {/* Date Selection Section */}
+                    <div className="availability-section">
+                      <h2 className="availability-section-title">Select Date</h2>
+                      <p className="availability-section-desc">
+                        Choose a date to update {selectedDoctor.POC_Name}'s availability
+                      </p>
+                      
+                      <div className="dates-legend">
+                        <div className="legend-item">
+                          <span className="legend-color available"></span>
+                          <span className="legend-text">Available</span>
+                        </div>
+                        <div className="legend-item">
+                          <span className="legend-color partial"></span>
+                          <span className="legend-text">Partially Available</span>
+                        </div>
+                        <div className="legend-item">
+                          <span className="legend-color blocked"></span>
+                          <span className="legend-text">Fully Blocked</span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="dates-container">
+                        {availableDates.length > 0 ? (
+                          <div className="dates-grid">
+                            {availableDates.map((dateObj) => (
+                              <div
+                                key={dateObj.Schedule_Date}
+                                className={`date-tile ${dateObj.active_status} ${selectedDate === dateObj.Schedule_Date ? 'selected' : ''}`}
+                                onClick={() => handleDateTileClick(dateObj)}
+                              >
+                                <span className="date-display">{formatDateDisplay(dateObj.Schedule_Date)}</span>
+                                <span className="date-status">{getStatusText(dateObj.active_status)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="no-dates">
+                            <AlertTriangle size={20} className="mr-2" />
+                            No available dates found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Availability Options Section */}
+                    {selectedDate && (
+                      <div className="availability-section">
+                        <h2 className="availability-section-title">Set Availability</h2>
+                        <p className="availability-section-desc">
+                          Choose how to update availability for <span className="highlight-date">{formatDateDisplay(selectedDate)}</span>
+                        </p>
+                        
+                        <div className="availability-options">
+                          <div className="option-card">
+                            <input
+                              type="radio"
+                              id="full-availability"
+                              name="availability"
+                              value="full"
+                              checked={availability === 'full'}
+                              onChange={handleAvailabilityChange}
+                            />
+                            <label htmlFor="full-availability" className="option-label">
+                              <div className="option-icon">
+                                <CheckCircle size={20} />
+                              </div>
+                              <div className="option-text">
+                                <div className="option-title">Full Day Available</div>
+                                <div className="option-desc">Make all slots available for this date</div>
+                              </div>
+                            </label>
+                          </div>
+                          
+                          <div className="option-card">
+                            <input
+                              type="radio"
+                              id="partial-availability"
+                              name="availability"
+                              value="partial"
+                              checked={availability === 'partial'}
+                              onChange={handleAvailabilityChange}
+                            />
+                            <label htmlFor="partial-availability" className="option-label">
+                              <div className="option-icon">
+                                <Grid size={20} />
+                              </div>
+                              <div className="option-text">
+                                <div className="option-title">Partial Availability</div>
+                                <div className="option-desc">Select specific time slots to make available</div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                        
+                        {/* Reason Field */}
+                        <div className="form-group">
+                          <label className="form-label">Enter reason for blocking this slot</label>
+                          <textarea
+                            className="form-textarea"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Enter reason for blocking..."
+                            rows={3}
+                          />
+                        </div>
+                        
+                        {/* Timings Section */}
+                        {availability === 'partial' && (
+                          <div className="timings-section">
+                            <h3 className="timings-title">Select Available Time Slots</h3>
+                            
+                            {timings.length > 0 ? (
+                              <div className="timings-grid">
+                                {timings.map((timing) => (
+                                  <div
+                                    key={timing.appointment_time}
+                                    className={`timing-tile ${timing.active_status === 'blocked' ? 'blocked' : ''} ${selectedTimings.includes(timing.appointment_time) ? 'selected' : ''}`}
+                                    onClick={() => handleTimingClick(timing)}
+                                  >
+                                    {timing.appointment_time}
+                                    {timing.active_status === 'blocked' && (
+                                      <span className="timing-blocked-indicator">Blocked</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="no-timings">
+                                <Clock size={20} className="mr-2" />
+                                No time slots found
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Update Button and Message */}
+                    {selectedDate && (
+                      <>
+                        <button
+                          type="button"
+                          className="update-button"
+                          onClick={handleUpdateAvailability}
+                          disabled={isLoading || !selectedDoctor || !selectedDate || (availability === 'partial' && selectedTimings.length === 0)}
+                        >
+                          Update Availability
+                        </button>
+                        
+                        {message && (
+                          <div className={`message ${messageType}`}>
+                            {messageType === 'success' ? <CheckCircle size={16} className="mr-2" /> : <AlertTriangle size={16} className="mr-2" />}
+                            {message}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
                 ) : (
-                  <div className="no-dates">
-                    <AlertTriangle size={20} className="mr-2" />
-                    No available dates found
+                  // FIXED Blocked Slots Tab Section
+                  <div className="blocked-slots-section">
+                    <h2 className="availability-section-title">Blocked Slots</h2>
+                    <p className="availability-section-desc">
+                      Currently blocked slots for {selectedDoctor.POC_Name}
+                    </p>
+                    
+                    <div className="dates-legend">
+                      <div className="legend-item">
+                        <span className="legend-color blocked"></span>
+                        <span className="legend-text">Fully Blocked</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-color partial"></span>
+                        <span className="legend-text">Partially Blocked</span>
+                      </div>
+                    </div>
+
+{blockedSlots.length > 0 ? (
+  <div className="blocked-dates-container">
+    {blockedSlots.map(({ date, slots, type }) => (
+      <div key={date} className="blocked-date-group">
+        <div 
+          className="blocked-date-header"
+          onClick={() => toggleDateExpansion(date)}
+        >
+          <div className="blocked-date-info">
+            <Calendar size={16} />
+            <span className="blocked-date-title">
+              {formatDateDisplay(date)}
+            </span>
+            <span className={`blocked-date-type ${type}`}>
+              {type === 'full' ? 'Fully Blocked' : 'Partially Blocked'}
+            </span>
+          </div>
+          <ChevronDown 
+            className={`expand-icon ${expandedDates[date] ? 'expanded' : ''}`} 
+            size={20} 
+          />
+        </div>
+        
+        <div 
+          className="blocked-slots-list"
+          style={{
+            maxHeight: expandedDates[date] ? `${slots.length * 60}px` : '0',
+            opacity: expandedDates[date] ? 1 : 0
+          }}
+        >
+          {slots.map(slot => (
+            <div key={slot.slot_id} className="blocked-slot-item">
+              <div className="slot-time">
+                {slot.start_time || 'All Day'}
+              </div>
+              <div className="slot-reason">
+                {slot.reason}
+              </div>
+              <button 
+                className="unblock-button"
+                onClick={() => handleUnblockSlot(slot.slot_id)}
+              >
+                <X size={16} /> Unblock
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+)  : (
+                      <div className="no-blocked-slots">
+                        <CheckCircle size={20} className="mr-2" />
+                        No blocked slots found
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-          )}
-          
-          {/* Availability Options Section */}
-          {selectedDate && (
-            <div className="availability-section">
-              <h2 className="availability-section-title">Set Availability</h2>
-              <p className="availability-section-desc">
-                Choose how to update availability for <span className="highlight-date">{formatDateDisplay(selectedDate)}</span>
-              </p>
-              
-              <div className="availability-options">
-                <div className="option-card">
-                  <input
-                    type="radio"
-                    id="full-availability"
-                    name="availability"
-                    value="full"
-                    checked={availability === 'full'}
-                    onChange={handleAvailabilityChange}
-                  />
-                  <label htmlFor="full-availability" className="option-label">
-                    <div className="option-icon">
-                      <CheckCircle size={20} />
-                    </div>
-                    <div className="option-text">
-                      <div className="option-title">Full Day Available</div>
-                      <div className="option-desc">Make all slots available for this date</div>
-                    </div>
-                  </label>
-                </div>
-                
-                <div className="option-card">
-                  <input
-                    type="radio"
-                    id="partial-availability"
-                    name="availability"
-                    value="partial"
-                    checked={availability === 'partial'}
-                    onChange={handleAvailabilityChange}
-                  />
-                  <label htmlFor="partial-availability" className="option-label">
-                    <div className="option-icon">
-                      <Grid size={20} />
-                    </div>
-                    <div className="option-text">
-                      <div className="option-title">Partial Availability</div>
-                      <div className="option-desc">Select specific time slots to make available</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
-              {/* Timings Section */}
-              {availability === 'partial' && (
-                <div className="timings-section">
-                  <h3 className="timings-title">Select Available Time Slots</h3>
-                  
-                  {timings.length > 0 ? (
-                    <div className="timings-grid">
-                      {timings.map((timing) => (
-                        <div
-                          key={timing.appointment_time}
-                          className={`timing-tile ${timing.active_status === 'blocked' ? 'blocked' : ''} ${selectedTimings.includes(timing.appointment_time) ? 'selected' : ''}`}
-                          onClick={() => handleTimingClick(timing)}
-                        >
-                          {timing.appointment_time}
-                          {timing.active_status === 'blocked' && (
-                            <span className="timing-blocked-indicator">Blocked</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="no-timings">
-                      <Clock size={20} className="mr-2" />
-                      No time slots found
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Update Button and Message */}
-          {selectedDate && (
-            <>
-              <button
-                type="button"
-                className="update-button"
-                onClick={handleUpdateAvailability}
-                disabled={isLoading || !selectedDoctor || !selectedDate || (availability === 'partial' && selectedTimings.length === 0)}
-              >
-                Update Availability
-              </button>
-              
-              {message && (
-                <div className={`message ${messageType}`}>
-                  {messageType === 'success' ? <CheckCircle size={16} className="mr-2" /> : <AlertTriangle size={16} className="mr-2" />}
-                  {message}
-                </div>
-              )}
-            </>
           )}
         </div>
       </div>

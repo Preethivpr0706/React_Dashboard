@@ -558,12 +558,15 @@ const createAppointment = async(req, res) => {
     }
 };
 
+// Update full availability with reason
 const updateFullAvailability = async(req, res) => {
-    const { pocId, date } = req.body;
-    console.log(req.body);
+    const { pocId, date, reason } = req.body;
     try {
         await pool.execute(
-            `UPDATE poc_available_slots SET Active_Status ='blocked' WHERE POC_ID = ? AND Schedule_Date = ?`, [pocId, date]
+            `UPDATE poc_available_slots 
+             SET Active_Status = 'blocked', 
+                 reason = ?
+             WHERE POC_ID = ? AND Schedule_Date = ?`, [reason, pocId, date]
         );
         res.status(200).json({ message: 'Full availability updated successfully.' });
     } catch (error) {
@@ -572,21 +575,21 @@ const updateFullAvailability = async(req, res) => {
     }
 };
 
-
-
+// Update partial availability with reason
 const updatePartialAvailability = async(req, res) => {
-    const { pocId, date, timings } = req.body;
-    console.log(req.body);
+    const { pocId, date, timings, reason } = req.body;
     try {
         if (!timings || timings.length === 0) {
             return res.status(400).json({ message: 'No timings selected.' });
         }
 
         const escapedTimings = timings.map(timing => pool.escape(timing));
-        const query = `UPDATE poc_available_slots SET Active_Status ='blocked' WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time IN (${escapedTimings.join(', ')})`;
-        const params = [pocId, date];
+        const query = `UPDATE poc_available_slots 
+                      SET Active_Status = 'blocked', 
+                          reason = ?
+                      WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time IN (${escapedTimings.join(', ')})`;
 
-        await pool.execute(query, params);
+        await pool.execute(query, [reason, pocId, date]);
         res.status(200).json({ message: 'Partial availability updated successfully.' });
     } catch (error) {
         console.error('Error updating partial availability:', error.message);
@@ -594,7 +597,93 @@ const updatePartialAvailability = async(req, res) => {
     }
 };
 
+// Get blocked slots for a doctor
+const getBlockedSlots = async(req, res) => {
+    const { pocId } = req.body;
 
+    if (!pocId) {
+        return res.status(400).json({ message: 'POC ID is required' });
+    }
+
+    try {
+        const [rows] = await pool.execute(
+            `SELECT 
+            slot_id,
+            DATE_FORMAT(Schedule_Date, '%Y-%m-%d') AS schedule_date,
+            Start_Time AS start_time,
+            Active_Status
+         FROM poc_available_slots
+         WHERE POC_ID = ?
+           AND (Schedule_Date > CURDATE() 
+                OR (Schedule_Date = CURDATE() AND Start_Time >= CURTIME()))
+         ORDER BY Schedule_Date, Start_Time`, [pocId]
+        );
+
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching slots:', error.message);
+        res.status(500).json({ message: 'Error fetching slots.' });
+    }
+};
+
+// Unblock slot by ID
+const unblockSlotById = async(req, res) => {
+    const { slotId } = req.body;
+    console.log("by id");
+    console.log(req.body);
+
+    if (!slotId) {
+        return res.status(400).json({ message: 'Slot ID is required' });
+    }
+
+    try {
+        await pool.execute(
+            `UPDATE poc_available_slots 
+             SET Active_Status = 'unblocked',
+                 reason = NULL
+             WHERE slot_id = ?`, [slotId]
+        );
+        res.status(200).json({ message: 'Slot unblocked successfully.' });
+    } catch (error) {
+        console.error('Error unblocking slot:', error.message);
+        res.status(500).json({ message: 'Error unblocking slot.' });
+    }
+};
+
+// Unblock slot by date/time
+const unblockSlot = async(req, res) => {
+    const { pocId, date, time } = req.body;
+    console.log(req.body);
+    console.log("in date")
+
+    if (!pocId || !date) {
+        return res.status(400).json({ message: 'POC ID and date are required' });
+    }
+
+    try {
+        if (time) {
+            // Unblock specific time slot
+            await pool.execute(
+                `UPDATE poc_available_slots 
+                 SET Active_Status = 'unblocked',
+                     reason = NULL
+                 WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ?`, [pocId, date, time]
+            );
+        } else {
+            // Unblock entire date
+            await pool.execute(
+                `UPDATE poc_available_slots 
+                 SET Active_Status = 'unblocked',
+                     reason = NULL
+                 WHERE POC_ID = ? AND Schedule_Date = ?`, [pocId, date]
+            );
+        }
+        res.status(200).json({ message: 'Slot unblocked successfully.' });
+    } catch (error) {
+        console.error('Error unblocking slot:', error.message);
+        res.status(500).json({ message: 'Error unblocking slot.' });
+    }
+};
 //Fetch available times for a POC on a selected date for updating availability
 const getAvailableTimesForUpdate = async(req, res) => {
     const { pocId, date } = req.body;
@@ -1349,4 +1438,7 @@ module.exports = {
     fetchPOCImage,
     logout,
     contactMails,
+    getBlockedSlots,
+    unblockSlot,
+    unblockSlotById
 };

@@ -43,7 +43,10 @@ const {
     updateAppointmentStatus,
     adminTodayAppointments,
     updateProfileImage,
-    fetchPOCImage
+    fetchPOCImage,
+    getBlockedSlots,
+    unblockSlotById,
+    unblockSlot
 } = require("../controllers/pocController");
 
 
@@ -59,6 +62,9 @@ router.post('/pocs/available-times-update', authMiddleware, getAvailableTimesFor
 router.post('/pocs/available-dates-update', authMiddleware, getAvailableDatesForUpdate);
 router.post('/pocs/update-full', authMiddleware, updateFullAvailability);
 router.post('/pocs/update-partial', authMiddleware, updatePartialAvailability);
+router.post('/pocs/blocked-slots', authMiddleware, getBlockedSlots);
+router.post('/pocs/unblock-slot', authMiddleware, unblockSlot);
+router.post('/pocs/unblock-slot-by-id', authMiddleware, unblockSlotById);
 // router.post('/verify-poc-email', authMiddleware, verifyPOCEmail);
 // router.post('/verify-email', authMiddleware, verifyEmail);
 // router.post('/update-password', authMiddleware, updatePassword);

@@ -99,7 +99,7 @@ const AdminDashboard = () => {
   const handleViewAppointmentDetails = (status) => navigate("/appointment-details-admin", { state: { clientId, status } });
   const handleViewDepartments = () => navigate("/departments", { state: { clientId } });
   const handleUpdateVisited = () => navigate("/admin-todays-appointments", { state: { clientId, clientName } });
-  const handleContactSupport = () => navigate("/contact-support", { state: { clientId, clientName } });
+  
 
   useEffect(() => {
     const fetchAppointmentCount = async (status, setState) => {
@@ -159,6 +159,10 @@ const AdminDashboard = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [clientId]);
+
+const handleContactSupport =() =>{
+  navigate("/home");
+}
 
   return (
     <div className="admin-dashboard">
@@ -253,7 +257,7 @@ const AdminDashboard = () => {
               </div>
               <div className="admin-dashboard__stats-info">
                 <h3 className="admin-dashboard__stats-value">{activeAppointments}</h3>
-                <p className="admin-dashboard__stats-label">Total Appointments</p>
+                <p className="admin-dashboard__stats-label">Active Appointments</p>
               </div>
             </div>
             
@@ -263,7 +267,7 @@ const AdminDashboard = () => {
               </div>
               <div className="admin-dashboard__stats-info">
                 <h3 className="admin-dashboard__stats-value">{totalDepartments}</h3>
-                <p className="admin-dashboard__stats-label">Total Departments</p>
+                <p className="admin-dashboard__stats-label">Departments</p>
               </div>
             </div>
             
@@ -273,7 +277,7 @@ const AdminDashboard = () => {
               </div>
               <div className="admin-dashboard__stats-info">
                 <h3 className="admin-dashboard__stats-value">{totalDoctors}</h3>
-                <p className="admin-dashboard__stats-label">Total Doctors</p>
+                <p className="admin-dashboard__stats-label">Doctors</p>
               </div>
             </div>
             
@@ -343,7 +347,7 @@ const AdminDashboard = () => {
               <div className="admin-dashboard__support-text">
                 <h4 className="admin-dashboard__support-title">Need Help?</h4>
                 <p className="admin-dashboard__support-description">Our support team is here to assist you</p>
-                <button className="admin-dashboard__support-btn">Contact Support</button>
+                <button className="admin-dashboard__support-btn" onClick={handleContactSupport}>Contact Support</button>
               </div>
             </div>
           </div>
