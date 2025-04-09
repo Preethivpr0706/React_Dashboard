@@ -16,6 +16,8 @@ const AddNewAppointment = () => {
   
   // Regular component state
   const [currentStep, setCurrentStep] = useState(1);
+  const [userExists, setUserExists] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [appointmentData, setAppointmentData] = useState({
     name: "",
     countryCode: "91", // Default country code for India
@@ -27,7 +29,8 @@ const AddNewAppointment = () => {
     doctor: "",
     date: "",
     time: "",
-    paymentStatus: "", // Added payment status field
+    paymentStatus: "",
+    userId: null, // Store user ID if found
   });
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [departments, setDepartments] = useState([]);
@@ -37,6 +40,7 @@ const AddNewAppointment = () => {
   const [errors, setErrors] = useState({});
   const [appointmentId, setAppointmentID] = useState(0);
   const [isPaid, setIsPaid] = useState(false); // Track if payment was made
+  const [isVerifying, setIsVerifying] = useState(false); // Loading state for verification
 
   // List of common country codes
   const countryCodes = [
@@ -94,38 +98,96 @@ const AddNewAppointment = () => {
     fetchDepartments();
   }, [clientId]);
 
+  // Verify phone number against database
+  const verifyPhoneNumber = async () => {
+    // Validate phone number before verification
+    if (!appointmentData.phone) {
+      setErrors({
+        ...errors,
+        phone: "Phone number is required."
+      });
+      return;
+    } else if (!/^\d+$/.test(appointmentData.phone)) {
+      setErrors({
+        ...errors,
+        phone: "Phone number should contain only digits."
+      });
+      return;
+    } else if (appointmentData.phone.length !== 10) {
+      setErrors({
+        ...errors,
+        phone: "Phone number must be 10 digits."
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const axiosInstance = createAuthenticatedAxios();
+      const formattedPhone = appointmentData.countryCode + appointmentData.phone;
+      
+      const response = await axiosInstance.post("/api/verify-user", { 
+        phone: formattedPhone,
+        clientId: clientId 
+      });
+      
+      if (response.data.exists) {
+        // User exists, pre-populate their data
+        setUserExists(true);
+        setAppointmentData({
+          ...appointmentData,
+          userId: response.data.userId,
+          name: response.data.name || "",
+          email: response.data.email || "",
+          location: response.data.location || ""
+        });
+      } else {
+        // New user
+        setUserExists(false);
+      }
+      
+      setPhoneVerified(true);
+      setCurrentStep(2);
+    } catch (error) {
+      console.error("Error verifying phone number:", error);
+      setErrors({
+        ...errors,
+        phone: "Could not verify phone number. Please try again."
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const validateStep = () => {
     const stepErrors = {};
 
-    if (currentStep === 1) {
+    // Phone verification is done separately
+    
+    // User information step
+    if (currentStep === 2 && !userExists) {
       if (!appointmentData.name) stepErrors.name = "Name is required.";
-      if (!appointmentData.phone) {
-        stepErrors.phone = "Phone is required.";
-      } else if (!/^\d+$/.test(appointmentData.phone)) {
-        stepErrors.phone = "Phone number should contain only digits.";
-      } else if (appointmentData.phone.length !== 10) {
-        stepErrors.phone = "Phone number must be 10 digits.";
-      }
-      
       if (!appointmentData.email) {
         stepErrors.email = "Email is required.";
       } else if (!/\S+@\S+\.\S+/.test(appointmentData.email)) {
         stepErrors.email = "Please enter a valid email address.";
       }
-      
       if (!appointmentData.location) stepErrors.location = "Location is required.";
     }
 
-    if (currentStep === 2) {
+    // Appointment type step
+    if (currentStep === 3) {
       if (!appointmentData.type) stepErrors.type = "Appointment type is required.";
     }
 
-    if (currentStep === 3) {
+    // Department and doctor step
+    if (currentStep === 4) {
       if (!appointmentData.department) stepErrors.department = "Department is required.";
       if (!appointmentData.doctor) stepErrors.doctor = "Doctor is required.";
     }
 
-    if (currentStep === 4) {
+    // Date and time step
+    if (currentStep === 5) {
       if (!appointmentData.date) stepErrors.date = "Date is required.";
       if (!appointmentData.time) stepErrors.time = "Time is required.";
     }
@@ -265,16 +327,20 @@ const AddNewAppointment = () => {
     try {
       const axiosInstance = createAuthenticatedAxios();
       
-      // Create/update user
-      const userResponse = await axiosInstance.post("/api/users", {
-        name: appointmentData.name,
-        phone: formattedPhone,
-        email: appointmentData.email,
-        location: appointmentData.location,
-        clientId: clientId,
-      });
+      let userId = appointmentData.userId;
       
-      const userId = userResponse.data.userId;
+      // If no userId exists yet, create/update user
+      if (!userId) {
+        const userResponse = await axiosInstance.post("/api/users", {
+          name: appointmentData.name,
+          phone: formattedPhone,
+          email: appointmentData.email,
+          location: appointmentData.location,
+          clientId: clientId,
+        });
+        
+        userId = userResponse.data.userId;
+      }
       
       // Create appointment
       const appointmentResponse = await axiosInstance.post("/api/create-appointments", {
@@ -297,68 +363,35 @@ const AddNewAppointment = () => {
   };
 
   const handleConfirm = () => {
-    // Validate all steps before proceeding to payment
+    // For returning users, revalidate name, email and location
+    if (userExists && (!appointmentData.name || !appointmentData.email || !appointmentData.location)) {
+      const userErrors = {};
+      if (!appointmentData.name) userErrors.name = "Name is required.";
+      if (!appointmentData.email) userErrors.email = "Email is required.";
+      if (!appointmentData.location) userErrors.location = "Location is required.";
+      
+      if (Object.keys(userErrors).length > 0) {
+        setErrors(userErrors);
+        setCurrentStep(2);
+        return;
+      }
+    }
+    
+    // Validate appointment steps
     let isValid = true;
     
-    // Validate step 1 data
-    const step1Errors = {};
-    if (!appointmentData.name) {
-      step1Errors.name = "Name is required.";
-      isValid = false;
-    }
+    if (!appointmentData.type) isValid = false;
+    if (!appointmentData.department || !appointmentData.doctor) isValid = false;
+    if (!appointmentData.date || !appointmentData.time) isValid = false;
     
-    if (!appointmentData.phone) {
-      step1Errors.phone = "Phone is required.";
-      isValid = false;
-    } else if (!/^\d+$/.test(appointmentData.phone)) {
-      step1Errors.phone = "Phone number should contain only digits.";
-      isValid = false;
-    } else if (appointmentData.phone.length !== 10) {
-      step1Errors.phone = "Phone number must be 10 digits.";
-      isValid = false;
-    }
-    
-    if (!appointmentData.email) {
-      step1Errors.email = "Email is required.";
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(appointmentData.email)) {
-      step1Errors.email = "Please enter a valid email address.";
-      isValid = false;
-    }
-    
-    if (!appointmentData.location) {
-      step1Errors.location = "Location is required.";
-      isValid = false;
-    }
-    
-    // Validate step 2-4 data
-    if (!appointmentData.type) {
-      isValid = false;
-    }
-    
-    if (!appointmentData.department || !appointmentData.doctor) {
-      isValid = false;
-    }
-    
-    if (!appointmentData.date || !appointmentData.time) {
-      isValid = false;
-    }
-    
-    // If any errors in step 1, update errors and move to step 1
-    if (Object.keys(step1Errors).length > 0) {
-      setErrors(step1Errors);
-      setCurrentStep(1);
-      return;
-    }
-    
-    // If other errors, alert the user
+    // If errors, alert the user
     if (!isValid) {
       alert("Please complete all required fields before confirming.");
       return;
     }
     
     // If all valid, proceed to payment
-    setCurrentStep(6);
+    setCurrentStep(7);
   };
 
   const handleBackToDashboard = () => {
@@ -377,15 +410,19 @@ const AddNewAppointment = () => {
   // Function to generate step titles for the indicators
   const getStepTitle = (step) => {
     switch(step) {
-      case 1: return "Patient";
-      case 2: return "Type";
-      case 3: return "Provider";
-      case 4: return "Timing";
-      case 5: return "Confirm";
-      case 6: return "Payment";
+      case 1: return "Phone";
+      case 2: return "Details";
+      case 3: return "Type";
+      case 4: return "Provider";
+      case 5: return "Timing";
+      case 6: return "Confirm";
+      case 7: return "Payment";
       default: return "";
     }
   };
+
+  // Calculate the total number of steps based on user exists status
+  const totalSteps = 7;
 
   // Show loading state while state is loading
   if (!isLoaded) {
@@ -398,7 +435,7 @@ const AddNewAppointment = () => {
         <>
           <h2>Schedule Appointment</h2>
           <div className="step-indicator">
-            {[1, 2, 3, 4, 5, 6].map((step) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
               <div 
                 key={step} 
                 className={`step ${currentStep >= step ? "active" : ""}`}
@@ -411,20 +448,12 @@ const AddNewAppointment = () => {
         </>
       )}
 
+      {/* Step 1: Phone Verification */}
       {currentStep === 1 && !isConfirmed && (
         <div>
-          <label>Full Name</label>
-          <input
-            type="text"
-            name="name"
-            className="form-control"
-            placeholder="Enter patient's full name"
-            value={appointmentData.name}
-            onChange={handleInputChange}
-          />
-          {errors.name && <span className="error-text">{errors.name}</span>}
-
-          <label>Phone Number</label>
+          <h3>Enter Patient's Phone Number</h3>
+          <p>Please enter the patient's phone number to check if they already exist in our system.</p>
+          
           <div className="phone-input-container">
             <select
               name="countryCode"
@@ -449,6 +478,39 @@ const AddNewAppointment = () => {
             />
           </div>
           {errors.phone && <span className="error-text">{errors.phone}</span>}
+          
+          <button 
+            className="btn btn-primary" 
+            onClick={verifyPhoneNumber}
+            disabled={isVerifying}
+          >
+            {isVerifying ? "Verifying..." : "Verify Phone Number"}
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: User Details (for new users or returning users to confirm/edit) */}
+      {currentStep === 2 && !isConfirmed && (
+        <div>
+          {userExists ? (
+            <div className="existing-user-banner">
+              <div className="icon-check"></div>
+              <p>Welcome back! We found your details. Please verify or update them.</p>
+            </div>
+          ) : (
+            <h3>Enter Patient Details</h3>
+          )}
+          
+          <label>Full Name</label>
+          <input
+            type="text"
+            name="name"
+            className="form-control"
+            placeholder="Enter patient's full name"
+            value={appointmentData.name}
+            onChange={handleInputChange}
+          />
+          {errors.name && <span className="error-text">{errors.name}</span>}
 
           <label>Email Address</label>
           <input
@@ -474,7 +536,8 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {currentStep === 2 && !isConfirmed && (
+      {/* Step 3: Appointment Type */}
+      {currentStep === 3 && !isConfirmed && (
         <div>
           <label>Appointment Type</label>
           <select
@@ -491,7 +554,8 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {currentStep === 3 && !isConfirmed && (
+      {/* Step 4: Department and Doctor Selection */}
+      {currentStep === 4 && !isConfirmed && (
         <div>
           <label>Department</label>
           <select
@@ -528,7 +592,8 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {currentStep === 4 && !isConfirmed && (
+      {/* Step 5: Date and Time Selection */}
+      {currentStep === 5 && !isConfirmed && (
         <div>
           <label>Appointment Date</label>
           <select
@@ -565,7 +630,8 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {currentStep === 5 && !isConfirmed && (
+      {/* Step 6: Confirmation */}
+      {currentStep === 6 && !isConfirmed && (
         <div>
           <div className="summary-section">
             <h3>Appointment Summary</h3>
@@ -585,7 +651,8 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {currentStep === 6 && !isConfirmed && (
+      {/* Step 7: Payment Options */}
+      {currentStep === 7 && !isConfirmed && (
         <div className="payment-options">
           <h3>Payment Options</h3>
           <p>Please select a payment option to complete the appointment booking:</p>
@@ -601,6 +668,7 @@ const AddNewAppointment = () => {
         </div>
       )}
 
+      {/* Confirmation Screen */}
       {isConfirmed && (
         <div className="confirmation-screen">
           <div className="confirmation-checkmark"></div>
@@ -620,14 +688,15 @@ const AddNewAppointment = () => {
         </div>
       )}
 
-      {!isConfirmed && (
+      {/* Navigation Buttons */}
+      {!isConfirmed && currentStep !== 1 && (
         <div className="navigation-buttons">
-          {currentStep > 1 && currentStep !== 6 && (
+          {currentStep > 1 && currentStep !== 7 && (
             <button className="btn btn-secondary" onClick={handlePrevious}>
               Back
             </button>
           )}
-          {currentStep < 5 && (
+          {currentStep < 6 && (
             <button className="btn btn-primary" onClick={handleNext}>
               Continue
             </button>

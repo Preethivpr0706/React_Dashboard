@@ -412,3 +412,65 @@ body {
         border-right: 1px solid #ddd;
     }
 }
+
+
+/* Styles for the existing user banner */
+
+.existing-user-banner {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid #4CAF50;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.existing-user-banner p {
+    margin: 0;
+    color: #2E7D32;
+    font-weight: 500;
+}
+
+.icon-check {
+    width: 24px;
+    height: 24px;
+    background: #4CAF50;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    position: relative;
+}
+
+.icon-check::after {
+    content: '';
+    width: 8px;
+    height: 14px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+    position: absolute;
+    transform: rotate(45deg) translate(-25%, -10%);
+}
+
+
+/* Styles for the phone verification step */
+
+.appointment-container-add h3 {
+    margin-bottom: 15px;
+    color: #444;
+}
+
+.appointment-container-add p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+
+/* Button style when disabled */
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

@@ -46,12 +46,14 @@ const {
     fetchPOCImage,
     getBlockedSlots,
     unblockSlotById,
-    unblockSlot
+    unblockSlot,
+    verifyUser
 } = require("../controllers/pocController");
 
 
 // Protected routes
 router.post('/users', authMiddleware, createUser);
+router.post("/verify-user", authMiddleware, verifyUser);
 router.post('/departments', authMiddleware, getDepartments);
 router.post('/pocs', authMiddleware, getPocsByDepartment);
 router.post('/appointments', authMiddleware, getAppointmentDetailsForPoc);

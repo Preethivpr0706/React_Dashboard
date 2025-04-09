@@ -464,7 +464,35 @@ const createUser = async(req, res) => {
     }
 };
 
+// Verify if user exists by phone number
+const verifyUser = async(req, res) => {
+    const { phone, clientId } = req.body;
 
+    try {
+        const [user] = await pool.execute(
+            "SELECT User_ID, User_Name, User_Email, User_Location FROM Users WHERE User_Contact = ? AND Client_ID = ?", [phone, clientId]
+        );
+
+        if (user.length > 0) {
+            // User found
+            res.json({
+                exists: true,
+                userId: user[0].User_ID,
+                name: user[0].User_Name,
+                email: user[0].User_Email,
+                location: user[0].User_Location
+            });
+        } else {
+            // User not found
+            res.json({
+                exists: false
+            });
+        }
+    } catch (error) {
+        console.error("Error verifying user:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
 // Fetch available dates for a POC
 const getAvailableDates = async(req, res) => {
     const { pocId } = req.body;
@@ -611,7 +639,8 @@ const getBlockedSlots = async(req, res) => {
             slot_id,
             DATE_FORMAT(Schedule_Date, '%Y-%m-%d') AS schedule_date,
             Start_Time AS start_time,
-            Active_Status
+            Active_Status,
+            reason
          FROM poc_available_slots
          WHERE POC_ID = ?
            AND (Schedule_Date > CURDATE() 
@@ -1440,5 +1469,6 @@ module.exports = {
     contactMails,
     getBlockedSlots,
     unblockSlot,
-    unblockSlotById
+    unblockSlotById,
+    verifyUser
 };
