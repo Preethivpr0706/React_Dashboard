@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Clock, User, Grid, CheckCircle, XCircle, AlertTriangle, List, X, ChevronDown  } from 'lucide-react';
+import { Calendar, Clock, User, Grid, CheckCircle, XCircle, AlertTriangle, List, X, ChevronDown } from 'lucide-react';
 import createAuthenticatedAxios from '../createAuthenticatedAxios';
-import './styles/UpdateAvailability.css'; // Make sure CSS is imported
+import './styles/UpdateAvailability.css';
 
 const useProtectedState = (key, initialValue) => {
   const [value, setValue] = useState(() => {
@@ -47,22 +47,53 @@ const UpdateAvailability = () => {
   const [reason, setReason] = useState('');
   const [activeTab, setActiveTab] = useState('update');
   const [blockedSlots, setBlockedSlots] = useState([]);
-  const [expandedBlockedDates, setExpandedBlockedDates] = useState({}); // Changed to object for multiple expanded items
-  // Add this state at the component level
-const [expandedDates, setExpandedDates] = useState({});
-
-// Add this toggle function
-const toggleDateExpansion = (date) => {
-  setExpandedDates(prev => ({
-    ...prev,
-    [date]: !prev[date]
-  }));
-};
-
+  const [expandedBlockedDates, setExpandedBlockedDates] = useState({});
+  const [expandedDates, setExpandedDates] = useState({});
   
+  // Modal state
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: '',
+    message: '',
+    actionLabel: '',
+    isDestructive: false,
+    onConfirm: () => {}
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const axiosInstance = createAuthenticatedAxios();
+
+  // Modal handlers
+  const handleConfirm = () => {
+    if (modalContent.onConfirm) {
+      modalContent.onConfirm();
+    }
+    setShowConfirmationModal(false);
+  };
+
+  const handleCancel = () => {
+    setShowConfirmationModal(false);
+  };
+
+  // Function to show confirmation modal
+  const showConfirmModal = ({ title, message, actionLabel, isDestructive = false, onConfirm }) => {
+    setModalContent({
+      title,
+      message,
+      actionLabel,
+      isDestructive,
+      onConfirm
+    });
+    setShowConfirmationModal(true);
+  };
+
+  const toggleDateExpansion = (date) => {
+    setExpandedDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
 
   useEffect(() => {
     const loadState = () => {
@@ -176,7 +207,6 @@ const toggleDateExpansion = (date) => {
       });
   };
   
-  
   useEffect(() => {
     if (selectedDoctor && selectedDate && availability === 'partial') {
       setTimings([]);
@@ -252,10 +282,14 @@ const toggleDateExpansion = (date) => {
    
   const handleDateTileClick = (dateObj) => {
     if (dateObj.active_status === 'blocked') {
-      // Handle unblocking a blocked date
-      if (window.confirm("Do you want to unblock this date?")) {
-        unblockSlot(dateObj.Schedule_Date);
-      }
+      // Show confirmation modal instead of window.confirm
+      showConfirmModal({
+        title: "Unblock Date",
+        message: `Are you sure you want to unblock ${formatDateDisplay(dateObj.Schedule_Date)}?`,
+        actionLabel: "Unblock",
+        isDestructive: false,
+        onConfirm: () => unblockSlot(dateObj.Schedule_Date)
+      });
       return;
     }
     
@@ -265,10 +299,14 @@ const toggleDateExpansion = (date) => {
     
   const handleTimingClick = (timing) => {
     if (timing.active_status === 'blocked') {
-      // Handle unblocking a blocked timing
-      if (window.confirm("Do you want to unblock this time slot?")) {
-        unblockTimingSlot(timing.appointment_time);
-      }
+      // Show confirmation modal instead of window.confirm
+      showConfirmModal({
+        title: "Unblock Time Slot",
+        message: `Are you sure you want to unblock the ${timing.appointment_time} slot?`,
+        actionLabel: "Unblock",
+        isDestructive: false,
+        onConfirm: () => unblockTimingSlot(timing.appointment_time)
+      });
       return;
     }
     
@@ -353,25 +391,32 @@ const toggleDateExpansion = (date) => {
       return;
     }
     
-    if (window.confirm("Do you want to unblock this slot?")) {
-      setIsLoading(true);
-      axiosInstance
-        .post("/api/pocs/unblock-slot-by-id", { slotId })
-        .then(() => {
-          setMessage("Slot unblocked successfully.");
-          setMessageType('success');
-          fetchAvailableDates();
-          fetchBlockedSlots();
-        })
-        .catch((error) => {
-          console.error('Error unblocking slot:', error);
-          setMessage('Error unblocking slot.');
-          setMessageType('error');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
+    // Show confirmation modal instead of window.confirm
+    showConfirmModal({
+      title: "Unblock Slot",
+      message: "Are you sure you want to unblock this slot?",
+      actionLabel: "Unblock",
+      isDestructive: false,
+      onConfirm: () => {
+        setIsLoading(true);
+        axiosInstance
+          .post("/api/pocs/unblock-slot-by-id", { slotId })
+          .then(() => {
+            setMessage("Slot unblocked successfully.");
+            setMessageType('success');
+            fetchAvailableDates();
+            fetchBlockedSlots();
+          })
+          .catch((error) => {
+            console.error('Error unblocking slot:', error);
+            setMessage('Error unblocking slot.');
+            setMessageType('error');
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+    });
   };
    
   const handleUpdateAvailability = () => {
@@ -387,51 +432,60 @@ const toggleDateExpansion = (date) => {
       return;
     }
     
-    setIsLoading(true);
-    const endpoint = availability === 'full' ? '/api/pocs/update-full' : '/api/pocs/update-partial';
-    const body = {
-      pocId: selectedDoctor.POC_ID,
-      date: selectedDate,
-      timings: availability === 'partial' ? selectedTimings : [],
-      reason
-    };
-    
-    axiosInstance
-      .post(endpoint, body)
-      .then((response) => {
-        setIsLoading(false);
-        if (response.status === 200) {
-          setMessage("Doctor's availability has been updated successfully.");
-          setMessageType('success');
-          setReason('');
-          
-          // Refresh data
-          fetchAvailableDates();
-          fetchBlockedSlots();
-          
-          // Refresh timings if partial
-          if (availability === 'partial') {
-            axiosInstance
-              .post("/api/pocs/available-times-update", { 
-                pocId: selectedDoctor.POC_ID, 
-                date: selectedDate 
-              })
-              .then((response) => response.data)
-              .then((data) => {
-                setTimings(data);
-              });
-          }
-        } else {
-          setMessage('Error updating availability.');
-          setMessageType('error');
-        }
-      })
-      .catch((error) => {
-        console.error('Error updating availability:', error);
-        setMessage('Error updating availability.');
-        setMessageType('error');
-        setIsLoading(false);
-      });
+    // Show confirmation modal before updating
+    showConfirmModal({
+      title: "Update Availability",
+      message: `Are you sure you want to update availability for ${selectedDoctor.POC_Name} on ${formatDateDisplay(selectedDate)}?`,
+      actionLabel: "Update",
+      isDestructive: false,
+      onConfirm: () => {
+        setIsLoading(true);
+        const endpoint = availability === 'full' ? '/api/pocs/update-full' : '/api/pocs/update-partial';
+        const body = {
+          pocId: selectedDoctor.POC_ID,
+          date: selectedDate,
+          timings: availability === 'partial' ? selectedTimings : [],
+          reason
+        };
+        
+        axiosInstance
+          .post(endpoint, body)
+          .then((response) => {
+            setIsLoading(false);
+            if (response.status === 200) {
+              setMessage("Doctor's availability has been updated successfully.");
+              setMessageType('success');
+              setReason('');
+              
+              // Refresh data
+              fetchAvailableDates();
+              fetchBlockedSlots();
+              
+              // Refresh timings if partial
+              if (availability === 'partial') {
+                axiosInstance
+                  .post("/api/pocs/available-times-update", { 
+                    pocId: selectedDoctor.POC_ID, 
+                    date: selectedDate 
+                  })
+                  .then((response) => response.data)
+                  .then((data) => {
+                    setTimings(data);
+                  });
+              }
+            } else {
+              setMessage('Error updating availability.');
+              setMessageType('error');
+            }
+          })
+          .catch((error) => {
+            console.error('Error updating availability:', error);
+            setMessage('Error updating availability.');
+            setMessageType('error');
+            setIsLoading(false);
+          });
+      }
+    });
   };
 
   const formatDateDisplay = (dateStr) => {
@@ -455,12 +509,47 @@ const toggleDateExpansion = (date) => {
     }
   };
 
-  // New function to toggle expand/collapse of blocked date tiles
   const toggleExpandBlockedDate = (date) => {
     setExpandedBlockedDates(prev => ({
       ...prev,
       [date]: !prev[date]
     }));
+  };
+
+  // Confirmation Modal Component
+  const ConfirmationModal = () => {
+    if (!showConfirmationModal) return null;
+    
+    return (
+      <div className="modal-container">
+        <div className="modal-backdrop" onClick={handleCancel}></div>
+        <div className="modal-box">
+          <div className="modal-box-header">
+            <h3>{modalContent.title}</h3>
+            <button className="modal-box-close" onClick={handleCancel}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="modal-box-body">
+            <p>{modalContent.message}</p>
+          </div>
+          <div className="modal-box-footer">
+            <button 
+              className="modal-box-button cancel" 
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+            <button 
+              className={`modal-box-button ${modalContent.isDestructive ? 'destructive' : 'confirm'}`}
+              onClick={handleConfirm}
+            >
+              {modalContent.actionLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (!clientId && !isLoading) {
@@ -712,16 +801,20 @@ const toggleDateExpansion = (date) => {
                         </button>
                         
                         {message && (
-                          <div className={`message ${messageType}`}>
-                            {messageType === 'success' ? <CheckCircle size={16} className="mr-2" /> : <AlertTriangle size={16} className="mr-2" />}
-                            {message}
-                          </div>
-                        )}
+                                    <div className={`message ${messageType}`}>
+                                      {messageType === 'success' ? (
+                                        <CheckCircle size={16} className="mr-2" />
+                                      ) : (
+                                        <AlertTriangle size={16} className="mr-2" />
+                                      )}
+                                      {message}
+                                    </div>
+                                  )}
                       </>
                     )}
                   </>
                 ) : (
-                  // FIXED Blocked Slots Tab Section
+                  // Blocked Slots Tab Section
                   <div className="blocked-slots-section">
                     <h2 className="availability-section-title">Blocked Slots</h2>
                     <p className="availability-section-desc">
@@ -739,36 +832,37 @@ const toggleDateExpansion = (date) => {
                       </div>
                     </div>
 
-{blockedSlots.length > 0 ? (
-  <div className="blocked-dates-container">
-    {blockedSlots.map(({ date, slots, type }) => (
-      <div key={date} className="blocked-date-group">
-        <div 
-          className="blocked-date-header"
-          onClick={() => toggleDateExpansion(date)}
-        >
-          <div className="blocked-date-info">
-            <Calendar size={16} />
-            <span className="blocked-date-title">
-              {formatDateDisplay(date)}
-            </span>
-            <span className={`blocked-date-type ${type}`}>
-              {type === 'full' ? 'Fully Blocked' : 'Partially Blocked'}
-            </span>
-          </div>
-          <ChevronDown 
-            className={`expand-icon ${expandedDates[date] ? 'expanded' : ''}`} 
-            size={20} 
-          />
-        </div>
-        
-        <div 
-          className="blocked-slots-list"
-          style={{
-            maxHeight: expandedDates[date] ? `${slots.length * 60}px` : '0',
-            opacity: expandedDates[date] ? 1 : 0
-          }}
-        >
+                    {blockedSlots.length > 0 ? (
+                      <div className="blocked-dates-container">
+                        {blockedSlots.map(({ date, slots, type }) => (
+                          <div key={date} className="blocked-date-group">
+                            <div 
+                              className="blocked-date-header"
+                              onClick={() => toggleDateExpansion(date)}
+                            >
+                              <div className="blocked-date-info">
+                                <Calendar size={16} />
+                                <span className="blocked-date-title">
+                                  {formatDateDisplay(date)}
+                                </span>
+                                <span className={`blocked-date-type ${type}`}>
+                                  {type === 'full' ? 'Fully Blocked' : 'Partially Blocked'}
+                                </span>
+                              </div>
+                              <ChevronDown 
+                                className={`expand-icon ${expandedDates[date] ? 'expanded' : ''}`} 
+                                size={20} 
+                              />
+                            </div>
+                            
+                            <div 
+                              className="blocked-slots-list"
+                              style={{
+                                maxHeight: expandedDates[date] ? `${slots.length * 60}px` : '0',
+                                opacity: expandedDates[date] ? 1 : 0
+                              }}
+                            >
+                             
           {slots.map(slot => (
             <div key={slot.slot_id} className="blocked-slot-item">
               <div className="slot-time">
@@ -795,6 +889,17 @@ const toggleDateExpansion = (date) => {
                         No blocked slots found
                       </div>
                     )}
+
+{message && (
+  <div className={`message ${messageType}`}>
+    {messageType === 'success' ? (
+      <CheckCircle size={16} className="mr-2" />
+    ) : (
+      <AlertTriangle size={16} className="mr-2" />
+    )}
+    {message}
+  </div>
+)}
                   </div>
                 )}
               </div>
@@ -802,6 +907,7 @@ const toggleDateExpansion = (date) => {
           )}
         </div>
       </div>
+      <ConfirmationModal />
     </div>
   );
 };

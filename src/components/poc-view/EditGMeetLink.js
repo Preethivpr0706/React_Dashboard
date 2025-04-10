@@ -206,12 +206,6 @@ export function EditGMeetLink() {
     setShowConfirmation(false);
   };
 
-  const handleGoBack = () => {
-    navigate("/poc-dashboard", { 
-      state: { pocId, clientId, pocName } 
-    });
-  };
-
   return (
     <div className="gmeet-manager">
       <div className="header">

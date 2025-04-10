@@ -131,7 +131,14 @@ const DoctorDashboard = () => {
   const handleContactSupport =() =>{
     navigate("/home");
   }
-
+  const handleUpdateSchedule =() =>{
+    navigate("/update-schedule", { 
+      state: { 
+        pocId: pocId,
+        clientId: clientId
+      } 
+    });
+  }
   // Fetch appointment counts
   useEffect(() => {
     const fetchAppointmentCount = async (status, setState) => {
@@ -337,13 +344,13 @@ const DoctorDashboard = () => {
         <section className="quick-actions">
           <h2>Quick Actions</h2>
           <div className="action-cards">
-            <div className="action-card view-appointments">
+            <div className="action-card update-schedule">
               <div className="action-icon">
                 <FaCalendarAlt />
               </div>
-              <h3>Appointments</h3>
-              <p>View all your scheduled appointments</p>
-              <button onClick={handleViewAppointments}>View All</button>
+              <h3>Schedule</h3>
+              <p>Update your schedule</p>
+              <button onClick={handleUpdateSchedule}>Update Schedule</button>
             </div>
             
             <div className="action-card update-availability">
@@ -351,7 +358,7 @@ const DoctorDashboard = () => {
                 <FaCalendarDay />
               </div>
               <h3>Availability</h3>
-              <p>Update your availability schedule</p>
+              <p>Update your slot's availability</p>
               <button onClick={handleUpdateAvailability}>Update</button>
             </div>
             

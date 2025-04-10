@@ -27,6 +27,16 @@ const AvailabilityManager = () => {
   const [reason, setReason] = useState('');
   const [activeTab, setActiveTab] = useState('update');
   
+  // Modal state
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: '',
+    message: '',
+    action: null,
+    actionLabel: '',
+    isDestructive: false
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -186,11 +196,40 @@ const AvailabilityManager = () => {
       });
   };
 
+  // Custom confirmation function
+  const showConfirmation = (title, message, action, actionLabel = 'Confirm', isDestructive = false) => {
+    setModalContent({
+      title,
+      message,
+      action,
+      actionLabel,
+      isDestructive
+    });
+    setShowConfirmationModal(true);
+  };
+
+  // Handle confirm action
+  const handleConfirm = () => {
+    setShowConfirmationModal(false);
+    if (modalContent.action) {
+      modalContent.action();
+    }
+  };
+
+  // Handle cancel action
+  const handleCancel = () => {
+    setShowConfirmationModal(false);
+  };
+
   const handleDateTileClick = (dateObj) => {
     if (dateObj.active_status === 'blocked') {
-      if (window.confirm("Do you want to unblock this date?")) {
-        unblockSlot(dateObj.Schedule_Date);
-      }
+      showConfirmation(
+        'Unblock Date',
+        `Are you sure you want to unblock ${formatDateDisplay(dateObj.Schedule_Date)}?`,
+        () => unblockSlot(dateObj.Schedule_Date),
+        'Unblock',
+        true
+      );
       return;
     }
     
@@ -204,9 +243,13 @@ const AvailabilityManager = () => {
 
   const handleTimingClick = (timing) => {
     if (timing.active_status === 'blocked') {
-      if (window.confirm("Do you want to unblock this time slot?")) {
-        unblockTimingSlot(timing.appointment_time);
-      }
+      showConfirmation(
+        'Unblock Time Slot',
+        `Are you sure you want to unblock the ${timing.appointment_time} time slot?`,
+        () => unblockTimingSlot(timing.appointment_time),
+        'Unblock',
+        true
+      );
       return;
     }
     
@@ -264,28 +307,34 @@ const AvailabilityManager = () => {
   };
 
   const handleUnblockSlot = (slotId) => {
-    if (window.confirm("Do you want to unblock this slot?")) {
-      setLoading(true);
-      authenticatedFetch('/api/pocs/unblock-slot-by-id', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slotId }),
-      })
-        .then(() => {
-          setMessage("Slot unblocked successfully");
-          setMessageType('success');
-          fetchAvailableDates();
-          fetchBlockedSlots();
+    showConfirmation(
+      'Unblock Slot',
+      'Are you sure you want to unblock this slot?',
+      () => {
+        setLoading(true);
+        authenticatedFetch('/api/pocs/unblock-slot-by-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slotId }),
         })
-        .catch((error) => {
-          console.error('Error unblocking slot:', error);
-          setMessage('Error unblocking slot');
-          setMessageType('error');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+          .then(() => {
+            setMessage("Slot unblocked successfully");
+            setMessageType('success');
+            fetchAvailableDates();
+            fetchBlockedSlots();
+          })
+          .catch((error) => {
+            console.error('Error unblocking slot:', error);
+            setMessage('Error unblocking slot');
+            setMessageType('error');
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      },
+      'Unblock',
+      true
+    );
   };
 
   const handleUpdateAvailability = () => {
@@ -368,6 +417,43 @@ const AvailabilityManager = () => {
       [date]: !prev[date]
     }));
   };
+
+  // Add this component to your AvailabilityManager component
+
+const ConfirmationModal = () => {
+  if (!showConfirmationModal) return null;
+  
+  return (
+    <div className="modal-container">
+      <div className="modal-backdrop" onClick={handleCancel}></div>
+      <div className="modal-box">
+        <div className="modal-box-header">
+          <h3>{modalContent.title}</h3>
+          <button className="modal-box-close" onClick={handleCancel}>
+            <X size={20} />
+          </button>
+        </div>
+        <div className="modal-box-body">
+          <p>{modalContent.message}</p>
+        </div>
+        <div className="modal-box-footer">
+          <button 
+            className="modal-box-button cancel" 
+            onClick={handleCancel}
+          >
+            Cancel
+          </button>
+          <button 
+            className={`modal-box-button ${modalContent.isDestructive ? 'destructive' : 'confirm'}`}
+            onClick={handleConfirm}
+          >
+            {modalContent.actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
   if (isLoading) {
     return <div className="loading">Loading...</div>;
@@ -642,6 +728,8 @@ const AvailabilityManager = () => {
           )}
         </div>
       </div>
+      
+      <ConfirmationModal />
     </div>
   );
 };
