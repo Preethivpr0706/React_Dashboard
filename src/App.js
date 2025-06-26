@@ -33,6 +33,7 @@ import TermsOfService from "./components/TermsOfService";
 import HomePage from "./components/HomePage";
 import WhatsappBot from "./components/WhatsappBot";
 import { HelmetProvider } from 'react-helmet-async';
+import FollowupsPage from "./components/Followups";
 
 const AuthenticatedAdminDashboard = withAuth(AdminDashboard);
 const AuthenticatedViewPOC = withAuth(ViewPOC);
@@ -54,6 +55,7 @@ const AuthenticatedEditGMeetLink = withAuth(EditGMeetLink);
 const AuthenticatedEditConsultationFees = withAuth(EditConsultationFees);
 const AuthenticatedViewUsers = withAuth(ViewUsers);
 const AuthenticatedTodaysAppointmentsAdmin = withAuth(TodaysAppointmentsAdmin);
+const AuthenticatedFollowupsPage = withAuth(FollowupsPage);
 
 const App = () => {
   return (
@@ -94,6 +96,7 @@ const App = () => {
           <Route path="/fees" element={<AuthenticatedEditConsultationFees />} />
           <Route path="/users" element={<AuthenticatedViewUsers />} />
           <Route path="/admin-todays-appointments" element={<AuthenticatedTodaysAppointmentsAdmin />} />
+          <Route path="/followups" element={<AuthenticatedFollowupsPage />} />
         </Routes>
       </div>
     </Router>

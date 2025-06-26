@@ -356,6 +356,23 @@ const AddNewAppointment = () => {
       setAppointmentID(appointmentResponse.data.appointmentId);
       setIsPaid(paymentStatus === "Paid");
       setIsConfirmed(true);
+
+    // Prepare user data for the message
+    const userData = {
+      User_Name: appointmentData.name,
+      User_Phone: formattedPhone,
+      User_Email: appointmentData.email,
+      User_Location: appointmentData.location,
+      Poc_Name: pocName,
+        Department: departmentName
+    };
+
+    // Send confirmation messages
+    await axiosInstance.post("https://meisterbotsolutions.site/send-appointment-confirmation", {
+      clientId: clientId,
+      appointmentId: appointmentResponse.data.appointmentId,
+      userData: userData
+    });
     } catch (error) {
       console.error("Error confirming appointment:", error);
       alert("There was an error creating the appointment. Please try again.");

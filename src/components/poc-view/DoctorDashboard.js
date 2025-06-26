@@ -12,7 +12,8 @@ import {
   FaSignOutAlt, 
   FaLink, 
   FaMoneyBillWave, 
-  FaHeadset 
+  FaHeadset, 
+  FaCalendarPlus
 } from "react-icons/fa";
 import authenticatedFetch from '../../authenticatedFetch';
 import { useProtectedState } from '../../StatePersistence';
@@ -24,6 +25,8 @@ const DoctorDashboard = () => {
   const [canceledAppointments, setCanceledAppointments] = useState(0);
   const [directAppointments, setDirectAppointments] = useState(0);
   const [teleAppointments, setTeleAppointments] = useState(0);
+  const [clientName, setClientName] = useState('');
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,36 +79,41 @@ const DoctorDashboard = () => {
 
   // Fetch clientId and POC name
   useEffect(() => {
-    const fetchClientId = async () => {
-      try {
-        const response = await authenticatedFetch('/api/getClientId', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pocId }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) {
-            setClientId(data[0].Client_ID);
-            setPocName(data[0].POC_Name);
-            
-            // Save to sessionStorage for persistence
-            try {
-              sessionStorage.setItem('clientId', JSON.stringify(data[0].Client_ID));
-              sessionStorage.setItem('pocName', JSON.stringify(data[0].POC_Name));
-            } catch (error) {
-              console.error("Failed to save client data to sessionStorage:", error);
-            }
-          } else {
-            console.error("No clientId found");
-          }
-        } else {
-          console.error("Failed to fetch clientId");
+   const fetchClientId = async () => {
+  try {
+    const response = await authenticatedFetch('/api/getClientId', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pocId }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      // ✅ updated condition
+      if (data && data.Client_ID) {
+        setClientId(data.Client_ID);
+        setPocName(data.POC_Name);
+        setClientName(data.Client_Name);
+
+        try {
+          sessionStorage.setItem('clientId', JSON.stringify(data.Client_ID));
+          sessionStorage.setItem('pocName', JSON.stringify(data.POC_Name));
+          sessionStorage.setItem('clientName', JSON.stringify(data.Client_Name));
+        } catch (error) {
+          console.error("Failed to save client data to sessionStorage:", error);
         }
-      } catch (error) {
-        console.error("Error fetching clientId:", error);
+      } else {
+        console.error("No clientId found");
       }
-    };
+    } else {
+      console.error("Failed to fetch clientId");
+    }
+  } catch (error) {
+    console.error("Error fetching clientId:", error);
+  }
+};
+
   
     if (pocId && !clientId) fetchClientId();
   }, [pocId, clientId]);
@@ -139,6 +147,9 @@ const DoctorDashboard = () => {
       } 
     });
   }
+  const handleFollowups = () => navigate("/followups", { state: { clientId, clientName } });
+
+
   // Fetch appointment counts
   useEffect(() => {
     const fetchAppointmentCount = async (status, setState) => {
@@ -278,6 +289,12 @@ const DoctorDashboard = () => {
             <button onClick={handleTodaysAppointments}>
               <FaCalendarDay /> <span>Today's Appointments</span>
             </button>
+          </li>
+          <li>
+            <button onClick={handleFollowups}>
+              <FaCalendarPlus /> 
+            <span >Followups</span>
+          </button>
           </li>
           <li>
             <button onClick={handleUserProfile}>

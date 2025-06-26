@@ -364,3 +364,234 @@
         width: 100px;
     }
 }
+
+
+/* Additional CSS for filters and export functionality */
+
+
+/* Add these styles to your existing AppointmentDetails.css file */
+
+.filters-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.appointment-search-box {
+    flex: 1;
+    max-width: 400px;
+    padding: 10px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.appointment-search-box:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.export-button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.excel-button {
+    background-color: #28a745;
+    color: white;
+}
+
+.excel-button:hover:not(:disabled) {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.word-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.word-button:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.pdf-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.pdf-button:hover:not(:disabled) {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+.export-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-input,
+.filter-select {
+    padding: 8px 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    transition: border-color 0.3s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.filter-select {
+    cursor: pointer;
+}
+
+.clear-filters-button {
+    padding: 8px 16px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    height: fit-content;
+}
+
+.clear-filters-button:hover {
+    background-color: #5a6268;
+}
+
+.active-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.active-filters-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.filter-tag {
+    background-color: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.results-count {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+
+/* Responsive design for smaller screens */
+
+@media (max-width: 768px) {
+    .search-filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .appointment-search-box {
+        max-width: none;
+        margin-bottom: 10px;
+    }
+    .export-buttons {
+        justify-content: center;
+    }
+    .filters-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .filter-group {
+        min-width: auto;
+    }
+    .active-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .active-filters-info {
+        justify-content: center;
+    }
+    .results-count {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .filters-section {
+        padding: 15px;
+    }
+    .export-button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .filter-input,
+    .filter-select {
+        font-size: 13px;
+    }
+}

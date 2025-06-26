@@ -51,6 +51,9 @@ const {
 } = require("../controllers/pocController");
 
 
+const { setFollowup, getFollowups } = require("../controllers/followupController");
+
+
 // Protected routes
 router.post('/users', authMiddleware, createUser);
 router.post("/verify-user", authMiddleware, verifyUser);
@@ -102,5 +105,9 @@ router.post('/poc/update-profile-image', upload.single('image'), updateProfileIm
 
 // Update existing route to use enhanced fetchPOC function
 router.get('/doctor/:pocId', fetchPOCImage);
+
+
+router.post('/followups', authMiddleware, getFollowups);
+router.post('/set-followup', authMiddleware, setFollowup);
 
 module.exports = router;

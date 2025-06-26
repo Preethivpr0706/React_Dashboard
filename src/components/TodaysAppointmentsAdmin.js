@@ -34,6 +34,17 @@ const TodaysAppointmentsAdmin = () => {
         day: 'numeric'
     });
 
+    // Modal states
+    const [showFollowupChoiceModal, setShowFollowupChoiceModal] = useState(false);
+    const [showFollowupDateModal, setShowFollowupDateModal] = useState(false);
+    const [followupDate, setFollowupDate] = useState("");
+    const [currentAppointment, setCurrentAppointment] = useState(null);
+
+    const handleMarkAsVisited = async (appointment) => {
+        setCurrentAppointment(appointment);
+        setShowFollowupChoiceModal(true);
+    };
+
     // Load state from location or sessionStorage
     useEffect(() => {
         const loadState = () => {
@@ -223,6 +234,51 @@ const TodaysAppointmentsAdmin = () => {
         }
     };
 
+    const handleFollowupChoice = (hasFollowup) => {
+        setShowFollowupChoiceModal(false);
+        if (hasFollowup) {
+            setShowFollowupDateModal(true);
+        } else {
+            // Mark as visited without followup
+            updateStatus(currentAppointment.AppointmentId, "Availed", currentAppointment.Status);
+            setCurrentAppointment(null);
+        }
+    };
+
+    const saveFollowup = async () => {
+        try {
+            const response = await authenticatedFetch("/api/set-followup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    appointmentId: currentAppointment.AppointmentId,
+                    followupDate 
+                }),
+            });
+
+            if (response.ok) {
+                // First update the status to Availed
+                await updateStatus(currentAppointment.AppointmentId, "Availed", currentAppointment.Status);
+                setShowFollowupDateModal(false);
+                setFollowupDate("");
+                setCurrentAppointment(null);
+                toast.success("Appointment marked as visited with follow-up scheduled");
+            } else {
+                throw new Error("Failed to set follow-up date");
+            }
+        } catch (error) {
+            toast.error("Error setting follow-up date");
+            console.error("Error:", error);
+        }
+    };
+
+    const closeAllModals = () => {
+        setShowFollowupChoiceModal(false);
+        setShowFollowupDateModal(false);
+        setFollowupDate("");
+        setCurrentAppointment(null);
+    };
+
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
     };
@@ -336,6 +392,108 @@ const TodaysAppointmentsAdmin = () => {
             {sidebarOpen && (
                 <div className="appointments-sidebar-overlay" onClick={toggleSidebar}></div>
             )}
+
+            {/* Follow-up Choice Modal */}
+            {showFollowupChoiceModal && (
+                <div className="appointments-modal-overlay">
+                    <div className="appointments-modal appointments-followup-choice-modal">
+                        <div className="appointments-modal-header">
+                            <div className="appointments-modal-icon">
+                                <i className="fas fa-user-check"></i>
+                            </div>
+                            <h3>Mark as Visited</h3>
+                            <button 
+                                onClick={closeAllModals}
+                                className="appointments-modal-close"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="appointments-modal-body">
+                            <div className="appointments-patient-info">
+                                <strong>{currentAppointment?.PatientName}</strong>
+                                <span>{currentAppointment?.AppointmentTime}</span>
+                            </div>
+                            <p className="appointments-modal-question">
+                                Does this patient need a follow-up appointment?
+                            </p>
+                        </div>
+                        <div className="appointments-modal-footer appointments-choice-footer">
+                            <button 
+                                onClick={() => handleFollowupChoice(false)}
+                                className="appointments-modal-button appointments-no-followup"
+                            >
+                                <i className="fas fa-times-circle"></i>
+                                No Follow-up
+                            </button>
+                            <button 
+                                onClick={() => handleFollowupChoice(true)}
+                                className="appointments-modal-button appointments-yes-followup"
+                            >
+                                <i className="fas fa-calendar-plus"></i>
+                                Schedule Follow-up
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Follow-up Date Modal */}
+            {showFollowupDateModal && (
+                <div className="appointments-modal-overlay">
+                    <div className="appointments-modal appointments-followup-date-modal">
+                        <div className="appointments-modal-header">
+                            <div className="appointments-modal-icon">
+                                <i className="fas fa-calendar-plus"></i>
+                            </div>
+                            <h3>Schedule Follow-up</h3>
+                            <button 
+                                onClick={closeAllModals}
+                                className="appointments-modal-close"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="appointments-modal-body">
+                            <div className="appointments-patient-info">
+                                <strong>{currentAppointment?.PatientName}</strong>
+                                <span>{currentAppointment?.AppointmentTime}</span>
+                            </div>
+                            <div className="appointments-form-group">
+                                <label htmlFor="followupDate">Select Follow-up Date:</label>
+                                <input
+                                    type="date"
+                                    id="followupDate"
+                                    value={followupDate}
+                                    onChange={(e) => setFollowupDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="appointments-date-input"
+                                />
+                            </div>
+                        </div>
+                        <div className="appointments-modal-footer">
+                            <button 
+                                onClick={() => {
+                                    setShowFollowupDateModal(false);
+                                    setShowFollowupChoiceModal(true);
+                                }}
+                                className="appointments-modal-button appointments-modal-back"
+                            >
+                                <i className="fas fa-arrow-left"></i>
+                                Back
+                            </button>
+                            <button 
+                                onClick={saveFollowup}
+                                className="appointments-modal-button appointments-modal-confirm"
+                                disabled={!followupDate}
+                            >
+                                <i className="fas fa-check"></i>
+                                Confirm Follow-up
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             {/* Main Content */}
             <main className="appointments-main">
@@ -387,7 +545,7 @@ const TodaysAppointmentsAdmin = () => {
                                     <div className="appointments-actions">
                                         <button
                                             className="appointments-action-button appointments-visited"
-                                            onClick={() => updateStatus(appt.AppointmentId, "Availed", appt.Status)}
+                                            onClick={() => handleMarkAsVisited(appt)}
                                         >
                                             <i className="fas fa-check"></i>
                                             Mark as Visited

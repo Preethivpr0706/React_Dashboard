@@ -2,7 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiClock, FiUser, FiCalendar, FiCheckCircle, FiXCircle, FiAlertCircle, FiMenu, FiX } from "react-icons/fi";
+import { 
+  Clock, 
+  User, 
+  Calendar, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle, 
+  Menu, 
+  X,
+  CalendarPlus,
+  ArrowLeft,
+  Check,
+  Times
+} from "lucide-react";
 import "../styles/TodaysAppointments.css";
 import authenticatedFetch from "../../authenticatedFetch";
 
@@ -23,6 +36,12 @@ const TodaysAppointments = () => {
     const [clientId, setClientId] = useState(null);
     const [pocName, setPocName] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Modal states for follow-up
+    const [showFollowupChoiceModal, setShowFollowupChoiceModal] = useState(false);
+    const [showFollowupDateModal, setShowFollowupDateModal] = useState(false);
+    const [followupDate, setFollowupDate] = useState("");
+    const [currentAppointment, setCurrentAppointment] = useState(null);
 
     // Page background setup
     useEffect(() => {
@@ -156,10 +175,61 @@ const TodaysAppointments = () => {
         }
     }, [pocId, isLoading]);
 
-    const updateStatus = async (appointmentId, newStatus, previousStatus) => {
-        const confirmUpdate = window.confirm(`Are you sure you want to mark this appointment as ${newStatus}?`);
-        if (!confirmUpdate) return;
+    // Handle mark as visited - show follow-up modal
+    const handleMarkAsVisited = async (appointment) => {
+        setCurrentAppointment(appointment);
+        setShowFollowupChoiceModal(true);
+    };
 
+    // Handle follow-up choice
+    const handleFollowupChoice = (hasFollowup) => {
+        setShowFollowupChoiceModal(false);
+        if (hasFollowup) {
+            setShowFollowupDateModal(true);
+        } else {
+            // Mark as visited without followup
+            updateStatus(currentAppointment.AppointmentId, "Availed", currentAppointment.Status);
+            setCurrentAppointment(null);
+        }
+    };
+
+    // Save follow-up
+    const saveFollowup = async () => {
+        try {
+            const response = await authenticatedFetch("/api/set-followup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    appointmentId: currentAppointment.AppointmentId,
+                    followupDate 
+                }),
+            });
+
+            if (response.ok) {
+                // First update the status to Availed
+                await updateStatus(currentAppointment.AppointmentId, "Availed", currentAppointment.Status);
+                setShowFollowupDateModal(false);
+                setFollowupDate("");
+                setCurrentAppointment(null);
+                toast.success("Appointment marked as visited with follow-up scheduled");
+            } else {
+                throw new Error("Failed to set follow-up date");
+            }
+        } catch (error) {
+            toast.error("Error setting follow-up date");
+            console.error("Error:", error);
+        }
+    };
+
+    // Close all modals
+    const closeAllModals = () => {
+        setShowFollowupChoiceModal(false);
+        setShowFollowupDateModal(false);
+        setFollowupDate("");
+        setCurrentAppointment(null);
+    };
+
+    const updateStatus = async (appointmentId, newStatus, previousStatus) => {
         try {
             const response = await authenticatedFetch("/api/poc/update-appointment-status", {
                 method: "POST",
@@ -177,10 +247,10 @@ const TodaysAppointments = () => {
                 );
 
                 const toastId = toast.success(
-                    <div>
-                        Appointment marked as <b>{newStatus}</b>.{" "}
+                    <div className="toast-content">
+                        <span>Appointment marked as <strong>{newStatus}</strong></span>
                         <button 
-                            className="appointments-undo-button"
+                            className="toast-undo-button"
                             onClick={() => undoUpdateStatus(appointmentId, previousStatus, toastId)}
                         >
                             Undo
@@ -242,11 +312,11 @@ const TodaysAppointments = () => {
     const getStatusIcon = (status) => {
         switch(status) {
             case "Confirmed":
-                return <FiAlertCircle className="appointments-status-icon appointments-confirmed" />;
+                return <AlertCircle className="appointments-status-icon appointments-confirmed" />;
             case "Availed":
-                return <FiCheckCircle className="appointments-status-icon appointments-availed" />;
+                return <CheckCircle className="appointments-status-icon appointments-availed" />;
             case "Not_Availed":
-                return <FiXCircle className="appointments-status-icon appointments-not-availed" />;
+                return <XCircle className="appointments-status-icon appointments-not-availed" />;
             default:
                 return null;
         }
@@ -285,22 +355,43 @@ const TodaysAppointments = () => {
 
     // Show loading if we're still waiting for state to be loaded
     if (isLoading) {
-        return <div className="loading">Loading...</div>;
+        return (
+            <div className="appointments-loading-page">
+                <div className="appointments-spinner"></div>
+                <p>Loading...</p>
+            </div>
+        );
     }
 
     return (
         <div className="appointments-container">
-            <ToastContainer />
+            <ToastContainer 
+                position="bottom-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
             
             {/* Top navigation bar */}
             <header className="appointments-header">
-                <button className="appointments-menu-button" onClick={toggleSidebar}>
-                    <FiMenu />
-                </button>
-                <h1>Today's Appointments</h1>
+                <div className="appointments-header-left">
+                    <button className="appointments-menu-button" onClick={toggleSidebar}>
+                        <Menu size={24} />
+                    </button>
+                    <div className="appointments-header-info">
+                        <h1>Today's Appointments</h1>
+                        <p className="appointments-subtitle">Manage and track patient visits</p>
+                    </div>
+                </div>
                 <div className="appointments-date-display">
-                    <FiCalendar />
-                    {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    <Calendar size={20} />
+                    <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </div>
             </header>
 
@@ -337,7 +428,7 @@ const TodaysAppointments = () => {
                 <div className="appointments-sidebar-header">
                     <h2>Appointments</h2>
                     <button className="appointments-close-sidebar" onClick={closeSidebar}>
-                        <FiX />
+                        <X size={20} />
                     </button>
                 </div>
                 <nav className="appointments-sidebar-nav">
@@ -348,7 +439,7 @@ const TodaysAppointments = () => {
                             closeSidebar();
                         }}
                     >
-                        All
+                        <span>All Appointments</span>
                         <span className="appointments-badge">{getAppointmentCountByStatus("all")}</span>
                     </button>
                     <button 
@@ -358,7 +449,7 @@ const TodaysAppointments = () => {
                             closeSidebar();
                         }}
                     >
-                        Confirmed
+                        <span>Confirmed</span>
                         <span className="appointments-badge">{getAppointmentCountByStatus("confirmed")}</span>
                     </button>
                     <button 
@@ -368,7 +459,7 @@ const TodaysAppointments = () => {
                             closeSidebar();
                         }}
                     >
-                        Completed
+                        <span>Completed</span>
                         <span className="appointments-badge">{getAppointmentCountByStatus("completed")}</span>
                     </button>
                     <button 
@@ -378,7 +469,7 @@ const TodaysAppointments = () => {
                             closeSidebar();
                         }}
                     >
-                        Missed
+                        <span>Missed</span>
                         <span className="appointments-badge">{getAppointmentCountByStatus("missed")}</span>
                     </button>
                 </nav>
@@ -387,6 +478,112 @@ const TodaysAppointments = () => {
             {/* Overlay for sidebar on mobile */}
             {sidebarOpen && (
                 <div className="appointments-sidebar-overlay" onClick={closeSidebar}></div>
+            )}
+
+            {/* Follow-up Choice Modal */}
+            {showFollowupChoiceModal && (
+                <div className="appointments-modal-overlay">
+                    <div className="appointments-modal appointments-followup-choice-modal">
+                        <div className="appointments-modal-header">
+                            <div className="appointments-modal-title">
+                                <div className="appointments-modal-icon">
+                                    <CheckCircle size={24} />
+                                </div>
+                                <h3>Mark as Visited</h3>
+                            </div>
+                            <button 
+                                onClick={closeAllModals}
+                                className="appointments-modal-close"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="appointments-modal-body">
+                            <div className="appointments-patient-info">
+                                <strong>{currentAppointment?.PatientName}</strong>
+                                <span>{formatTime(currentAppointment?.AppointmentTime)}</span>
+                            </div>
+                            <p className="appointments-modal-question">
+                                Does this patient need a follow-up appointment?
+                            </p>
+                        </div>
+                        <div className="appointments-modal-footer appointments-choice-footer">
+                            <button 
+                                onClick={() => handleFollowupChoice(false)}
+                                className="appointments-modal-button appointments-no-followup"
+                            >
+                                <XCircle size={18} />
+                                No Follow-up
+                            </button>
+                            <button 
+                                onClick={() => handleFollowupChoice(true)}
+                                className="appointments-modal-button appointments-yes-followup"
+                            >
+                                <CalendarPlus size={18} />
+                                Schedule Follow-up
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Follow-up Date Modal */}
+            {showFollowupDateModal && (
+                <div className="appointments-modal-overlay">
+                    <div className="appointments-modal appointments-followup-date-modal">
+                        <div className="appointments-modal-header">
+                            <div className="appointments-modal-title">
+                                <div className="appointments-modal-icon">
+                                    <CalendarPlus size={24} />
+                                </div>
+                                <h3>Schedule Follow-up</h3>
+                            </div>
+                            <button 
+                                onClick={closeAllModals}
+                                className="appointments-modal-close"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="appointments-modal-body">
+                            <div className="appointments-patient-info">
+                                <strong>{currentAppointment?.PatientName}</strong>
+                                <span>{formatTime(currentAppointment?.AppointmentTime)}</span>
+                            </div>
+                            <div className="appointments-form-group">
+                                <label htmlFor="followupDate">Select Follow-up Date:</label>
+                                <input
+                                    type="date"
+                                    id="followupDate"
+                                    value={followupDate}
+                                    onChange={(e) => setFollowupDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="appointments-date-input"
+                                />
+                            </div>
+                        </div>
+                        <div className="appointments-modal-footer">
+                            <button 
+                                onClick={() => {
+                                    setShowFollowupDateModal(false);
+                                    setShowFollowupChoiceModal(true);
+                                }}
+                                className="appointments-modal-button appointments-modal-back"
+                            >
+                                <ArrowLeft size={18} />
+                                Back
+                            </button>
+                            <button 
+                                onClick={saveFollowup}
+                                className="appointments-modal-button appointments-modal-confirm"
+                                disabled={!followupDate}
+                            >
+                                <CheckCircle size={18} />
+                                Confirm Follow-up
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Main content */}
@@ -398,7 +595,8 @@ const TodaysAppointments = () => {
                     </div>
                 ) : error ? (
                     <div className="appointments-error">
-                        <FiAlertCircle size={48} />
+                        <AlertCircle size={48} />
+                        <h3>Something went wrong</h3>
                         <p>{error}</p>
                         <button onClick={() => window.location.reload()}>Try Again</button>
                     </div>
@@ -409,7 +607,7 @@ const TodaysAppointments = () => {
                                 <div className="appointments-card" key={appt.AppointmentId}>
                                     <div className="appointments-card-header">
                                         <div className="appointments-time">
-                                            <FiClock />
+                                            <Clock size={18} />
                                             <span>{formatTime(appt.AppointmentTime)}</span>
                                         </div>
                                         <div className={`appointments-status appointments-${appt.Status.toLowerCase().replace("_", "-")}`}>
@@ -419,26 +617,29 @@ const TodaysAppointments = () => {
                                     </div>
                                     <div className="appointments-card-body">
                                         <h3 className="appointments-patient-name">
-                                            <FiUser />
+                                            <User size={18} />
                                             {appt.PatientName}
                                         </h3>
                                         <div className="appointments-type">
-                                            <span>Type:</span> {appt.AppointmentType}
+                                            <span className="appointments-type-label">Type:</span> 
+                                            <span className="appointments-type-value">{appt.AppointmentType}</span>
                                         </div>
                                     </div>
                                     {appt.Status === "Confirmed" && appt.Is_Active === 1 && (
                                         <div className="appointments-actions">
                                             <button 
                                                 className="appointments-action-button appointments-visited"
-                                                onClick={() => updateStatus(appt.AppointmentId, "Availed", appt.Status)}
+                                                onClick={() => handleMarkAsVisited(appt)}
                                             >
-                                                <FiCheckCircle /> Mark as Visited
+                                                <CheckCircle size={18} /> 
+                                                Mark as Visited
                                             </button>
                                             <button 
                                                 className="appointments-action-button appointments-not-visited"
                                                 onClick={() => updateStatus(appt.AppointmentId, "Not_Availed", appt.Status)}
                                             >
-                                                <FiXCircle /> Mark as Not Visited
+                                                <XCircle size={18} /> 
+                                                Mark as Not Visited
                                             </button>
                                         </div>
                                     )}
@@ -446,9 +647,18 @@ const TodaysAppointments = () => {
                             ))
                         ) : (
                             <div className="appointments-empty">
+                                <div className="appointments-empty-icon">
+                                    <Calendar size={64} />
+                                </div>
                                 <h3>No {selectedTab !== "all" ? selectedTab : ""} appointments found for today</h3>
+                                <p>There are no appointments to display at the moment.</p>
                                 {selectedTab !== "all" && (
-                                    <button onClick={() => setSelectedTab("all")}>View all appointments</button>
+                                    <button 
+                                        onClick={() => setSelectedTab("all")}
+                                        className="appointments-empty-button"
+                                    >
+                                        View all appointments
+                                    </button>
                                 )}
                             </div>
                         )}

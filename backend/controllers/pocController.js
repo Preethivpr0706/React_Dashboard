@@ -794,15 +794,34 @@ ORDER BY Schedule_Date;
 const getClientFromPOC = async(req, res) => {
     const { pocId } = req.body;
     try {
+        // Step 1: Get the POC row
         const [pocs] = await pool.execute(
-            `SELECT * FROM poc WHERE POC_ID=?`, [pocId]
+            `SELECT * FROM poc WHERE POC_ID = ?`, [pocId]
         );
-        res.json(pocs);
+
+        if (pocs.length === 0) {
+            return res.status(404).json({ message: 'POC not found' });
+        }
+
+        const poc = pocs[0];
+
+        // Step 2: Get the client name using Client_ID from POC
+        const [clients] = await pool.execute(
+            `SELECT Client_Name FROM client WHERE Client_ID = ?`, [poc.Client_ID]
+        );
+
+        const clientName = clients[0] ? clients[0].Client_Name : null;
+        // Step 3: Return combined data
+        res.json({
+            ...poc,
+            Client_Name: clientName
+        });
     } catch (error) {
-        console.error('Error fetching POCs:', error.message);
-        res.status(500).json({ message: 'Error fetching POCs' });
+        console.error('Error fetching POC and Client:', error.message);
+        res.status(500).json({ message: 'Error fetching POC and Client' });
     }
-}
+};
+
 
 // poc dashboard - total and cancelled
 const pocAppointmentCount = async(req, res) => {
@@ -844,30 +863,81 @@ const appointmentDetails = async(req, res) => {
         let params;
 
         if (status) {
-            query = "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.POC_ID = ? AND a.Status = ? AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))";
+            query = `SELECT 
+                a.Payment_Status, 
+                a.Appointment_ID, 
+                u.User_Name, 
+                u.User_Contact, 
+                u.User_Location, 
+                p.POC_Name, 
+                p.Specialization, 
+                p.Client_ID,
+                a.Appointment_Type, 
+                a.Branch_ID,
+                DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, 
+                a.Appointment_Time 
+            FROM Appointments a 
+            JOIN Users u ON a.User_ID = u.User_ID 
+            JOIN POC p ON a.POC_ID = p.POC_ID 
+            WHERE a.POC_ID = ? AND a.Status = ? 
+            AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))`;
             params = [pocId, status];
         } else if (type) {
-            query = "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.POC_ID = ? AND a.Appointment_Type = ? AND a.Status = 'Confirmed' AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))";
+            query = `SELECT 
+                a.Payment_Status, 
+                a.Appointment_ID, 
+                u.User_Name, 
+                u.User_Contact, 
+                u.User_Location, 
+                p.POC_Name, 
+                p.Specialization, 
+                p.Client_ID,
+                a.Appointment_Type, 
+                a.Branch_ID,
+                DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, 
+                a.Appointment_Time 
+            FROM Appointments a 
+            JOIN Users u ON a.User_ID = u.User_ID 
+            JOIN POC p ON a.POC_ID = p.POC_ID 
+            WHERE a.POC_ID = ? AND a.Appointment_Type = ? AND a.Status = 'Confirmed' 
+            AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))`;
             params = [pocId, type];
         } else {
             res.status(400).json({ message: "Invalid request" });
             return;
         }
 
-        const [rows] = await pool.execute(query, params);
+        const [appointmentRows] = await pool.execute(query, params);
 
-        const appointments = rows.map((row) => ({
-            AppointmentID: row.Appointment_ID,
-            UserName: row.User_Name,
-            UserContact: row.User_Contact,
-            UserLocation: row.User_Location,
-            POCName: row.POC_Name,
-            Specialization: row.Specialization,
-            AppointmentType: row.Appointment_Type,
-            AppointmentDate: row.Appointment_Date,
-            AppointmentTime: row.Appointment_Time,
-            Payment_Status: row.Payment_Status,
-        }));
+        // Process appointments and fetch branch names when needed
+        const appointments = [];
+        for (const row of appointmentRows) {
+            let branchName = null;
+            if (row.Branch_ID > 0 && row.Client_ID) {
+                // Fetch branch name for this specific branch
+                const [branchRows] = await pool.execute(
+                    `SELECT Value_name 
+                     FROM list 
+                     WHERE Client_ID = ? AND Key_name = 'BRANCH' AND Branch_ID = ?`, [row.Client_ID, row.Branch_ID]
+                );
+
+                branchName = branchRows[0] ? branchRows[0].Value_name : null;
+            }
+            appointments.push({
+                AppointmentID: row.Appointment_ID,
+                UserName: row.User_Name,
+                UserContact: row.User_Contact,
+                UserLocation: row.User_Location,
+                POCName: row.POC_Name,
+                Specialization: row.Specialization,
+                AppointmentType: row.Appointment_Type,
+                BranchID: row.Branch_ID,
+                BranchName: branchName,
+                AppointmentDate: row.Appointment_Date,
+                AppointmentTime: row.Appointment_Time,
+                Payment_Status: row.Payment_Status,
+            });
+        }
 
         res.json(appointments);
     } catch (error) {
@@ -1112,22 +1182,58 @@ const fetchDepartmentDoctorCount = async(req, res) => {
 const adminAppointmentDetails = async(req, res) => {
     const { clientId, status } = req.body;
     try {
-        const [rows] = await pool.execute(
-            "SELECT a.Payment_Status, a.Appointment_ID, u.User_Name, u.User_Contact, u.User_Location, p.POC_Name, p.Specialization, a.Appointment_Type, DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, a.Appointment_Time FROM Appointments a JOIN Users u ON a.User_ID = u.User_ID JOIN POC p ON a.POC_ID = p.POC_ID WHERE a.Client_ID = ? AND a.Status = ? AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))", [clientId, status]
+        // 1. First fetch all appointments
+        const [appointmentRows] = await pool.execute(
+            `SELECT 
+                a.Payment_Status, 
+                a.Appointment_ID, 
+                u.User_Name, 
+                u.User_Contact, 
+                u.User_Location, 
+                p.POC_Name, 
+                p.Specialization, 
+                a.Appointment_Type, 
+                a.Branch_ID,
+                DATE_FORMAT(a.Appointment_Date, '%d-%b-%Y') as Appointment_Date, 
+                a.Appointment_Time 
+             FROM Appointments a 
+             JOIN Users u ON a.User_ID = u.User_ID 
+             JOIN POC p ON a.POC_ID = p.POC_ID 
+             WHERE a.Client_ID = ? AND a.Status = ? 
+             AND (a.Appointment_Date > CURDATE() OR (a.Appointment_Date = CURDATE() AND a.Appointment_Time >= CURTIME()))`, [clientId, status]
         );
 
-        const appointments = rows.map((row) => ({
-            AppointmentID: row.Appointment_ID,
-            UserName: row.User_Name,
-            UserContact: row.User_Contact,
-            UserLocation: row.User_Location,
-            POCName: row.POC_Name,
-            Specialization: row.Specialization,
-            AppointmentType: row.Appointment_Type,
-            AppointmentDate: row.Appointment_Date,
-            AppointmentTime: row.Appointment_Time,
-            Payment_Status: row.Payment_Status,
-        }));
+        // 2. Process appointments and fetch branch names when needed
+        const appointments = [];
+        for (const row of appointmentRows) {
+            let branchName = null;
+
+            if (row.Branch_ID > 0) {
+                // Fetch branch name for this specific branch
+                const [branchRows] = await pool.execute(
+                    `SELECT Value_name 
+                     FROM list 
+                     WHERE Client_ID = ? AND Key_name = 'BRANCH' AND Branch_ID = ?`, [clientId, row.Branch_ID]
+                );
+
+                branchName = branchRows[0] ? branchRows[0].Value_name : null;
+            }
+
+            appointments.push({
+                AppointmentID: row.Appointment_ID,
+                UserName: row.User_Name,
+                UserContact: row.User_Contact,
+                UserLocation: row.User_Location,
+                POCName: row.POC_Name,
+                Specialization: row.Specialization,
+                AppointmentType: row.Appointment_Type,
+                BranchID: row.Branch_ID,
+                BranchName: branchName,
+                AppointmentDate: row.Appointment_Date,
+                AppointmentTime: row.Appointment_Time,
+                Payment_Status: row.Payment_Status,
+            });
+        }
 
         res.json(appointments);
     } catch (error) {

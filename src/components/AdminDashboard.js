@@ -99,6 +99,10 @@ const AdminDashboard = () => {
   const handleViewAppointmentDetails = (status) => navigate("/appointment-details-admin", { state: { clientId, status } });
   const handleViewDepartments = () => navigate("/departments", { state: { clientId } });
   const handleUpdateVisited = () => navigate("/admin-todays-appointments", { state: { clientId, clientName } });
+  const handleFollowups = () => navigate("/followups", { state: { clientId, clientName } });
+
+
+
   
 
   useEffect(() => {
@@ -183,6 +187,10 @@ const handleContactSupport =() =>{
           <button className="admin-dashboard__sidebar-item" onClick={handleUpdateVisited}>
             <span className="admin-dashboard__sidebar-icon"><i className="fas fa-calendar-day"></i></span>
             <span className="admin-dashboard__sidebar-text">Today's Appointments</span>
+          </button>
+          <button className="admin-dashboard__sidebar-item" onClick={handleFollowups}>
+            <span className="admin-dashboard__sidebar-icon"><i className="fas fa-calendar-plus"></i></span>
+            <span className="admin-dashboard__sidebar-text">Followups</span>
           </button>
           <button className="admin-dashboard__sidebar-item" onClick={handleDoctorsList}>
             <span className="admin-dashboard__sidebar-icon"><i className="fas fa-user-md"></i></span>
